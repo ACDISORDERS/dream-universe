@@ -260,7 +260,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-5</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-6</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -585,10 +585,11 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     $all('.tab-ico').forEach(function(el){ el.innerHTML = icon(el.getAttribute('data-ico')); });
     loadState().then(function(s){
       if(s && s.worlds){ state=s; } else { seedWorlds(); }
+      dedupeSeedWorlds();
       renderWorldList();
       if(activeWorld()){ selectWorld(state.activeWorldId, true); } else { showHome(); }
       var _sc=syncCfg(); if(_sc && _sc.token && _sc.auto){ syncNow(true); }
-    }).catch(function(){ seedWorlds(); renderWorldList(); showHome(); var _sc=syncCfg(); if(_sc && _sc.token && _sc.auto){ syncNow(true); } });
+    }).catch(function(){ seedWorlds(); dedupeSeedWorlds(); renderWorldList(); showHome(); var _sc=syncCfg(); if(_sc && _sc.token && _sc.auto){ syncNow(true); } });
     bindEvents();
     registerSW();
   }
@@ -603,6 +604,39 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       { id:'seed-moshi', name:'末世生存', icon:'crystal', themeColor:'#c2a36a', desc:'文明崩坏后的求生与重建', createdAt:Date.now(), fragments:[], elements:[], cards:[] }
     ];
     state.activeWorldId=null; saveState();
+  }
+
+  // 一次性清理：旧版本用 uid() 生成的默认世界，会变成同名但 ID 不同的重复项。把它合并到规范 ID 的世界里然后删除。
+  function dedupeSeedWorlds(){
+    var canonical = { '灵异恐怖':'seed-lingyi', '鬼怪童话':'seed-tonghua', '末世生存':'seed-moshi' };
+    var canonicalWorlds = {}, dupIds = {}, dupName = {}, changed = false;
+    state.worlds.forEach(function(w){
+      var cid = canonical[w.name];
+      if(!cid) return;
+      if(w.id === cid){ canonicalWorlds[cid] = w; }
+      else { dupIds[w.id] = true; dupName[w.id] = w.name; changed = true; }
+    });
+    if(!changed) return;
+    // 把重复项里的碎片/元素/卡片合并到规范世界
+    state.worlds.forEach(function(w){
+      if(!dupIds[w.id]) return;
+      var keeper = canonicalWorlds[canonical[w.name]];
+      if(!keeper) return;
+      ['fragments','cards','elements'].forEach(function(k){
+        if(!keeper[k]) keeper[k] = [];
+        var existing = {};
+        keeper[k].forEach(function(it){ existing[it.id] = true; });
+        (w[k] || []).forEach(function(it){
+          if(!existing[it.id]) keeper[k].push(JSON.parse(JSON.stringify(it)));
+        });
+      });
+    });
+    // 如果当前正在看重复项，切到规范世界
+    if(state.activeWorldId && dupIds[state.activeWorldId]){
+      state.activeWorldId = canonical[dupName[state.activeWorldId]] || null;
+    }
+    state.worlds = state.worlds.filter(function(w){ return !dupIds[w.id]; });
+    saveState();
   }
 
   /* ---------- 事件 ---------- */
@@ -1246,7 +1280,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     function fail(msg){ if(!silent) $('#syncStatus').textContent='同步失败：'+msg; }
     var login, sha=null, branch='master';
     function applyRemote(remote){
-      if(remote && remote.data && remote.data.worlds){ state=mergeWorlds(state, remote.data); saveState(); renderWorldList(); if(activeWorld()) selectWorld(state.activeWorldId); else showHome(); }
+      if(remote && remote.data && remote.data.worlds){ state=mergeWorlds(state, remote.data); dedupeSeedWorlds(); saveState(); renderWorldList(); if(activeWorld()) selectWorld(state.activeWorldId); else showHome(); }
       if(remote) sha=remote.sha;
     }
     return Promise.resolve()
