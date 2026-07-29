@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>梦境宇宙 · DreamVerse</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3ClinearGradient%20id='bg'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%233b2a63'/%3E%3Cstop%20offset='1'%20stop-color='%237a5a9e'/%3E%3C/linearGradient%3E%3CradialGradient%20id='m'%20cx='0.4'%20cy='0.36'%20r='0.7'%3E%3Cstop%20offset='0'%20stop-color='%23fff7ef'/%3E%3Cstop%20offset='1'%20stop-color='%23c3a9e0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='url(%23bg)'/%3E%3Ccircle%20cx='32'%20cy='31'%20r='19'%20fill='url(%23m)'/%3E%3Cg%20transform='rotate(-17%2032%2031)'%3E%3Cellipse%20cx='32'%20cy='31'%20rx='27'%20ry='9'%20fill='none'%20stroke='%23E8D29A'%20stroke-width='1.4'/%3E%3C/g%3E%3Cpath%20d='M32%2013%20A18%2018%200%201%200%2032%2049%20A13%2013%200%201%201%2032%2013z'%20fill='%23ffffff'%20opacity='0.85'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== 梦境宇宙 · 主题色驱动 + 深/浅自动适配 ===== */
+:root{
+  /* 默认（首页）= 梦幻淡紫粉 */
+  --bg:
+    radial-gradient(900px 520px at 82% -12%, rgba(227,182,200,.55), transparent 60%),
+    radial-gradient(820px 520px at -8% 112%, rgba(203,185,224,.55), transparent 60%),
+    repeating-linear-gradient(46deg, rgba(160,130,90,.03) 0 2px, transparent 2px 7px),
+    linear-gradient(162deg, #F1E7F5, #E9DDF2);
+  --panel:rgba(247,238,221,.96);
+  --glass:rgba(255,251,242,.80);
+  --card:rgba(255,255,255,.82);
+  --card-2:rgba(255,255,255,.95);
+  --ink:#3f362c;
+  --ink-soft:rgba(63,54,44,.66);
+  --gold:#B58E36;
+  --gold-soft:#D9C089;
+  --lav:#CBB9E0;
+  --rose:#E3B6C8;
+  --line:rgba(90,70,45,.18);
+  --line-strong:rgba(90,70,45,.36);
+  --chip-bg:rgba(90,70,45,.12);
+  --chip-fg:rgba(63,54,44,.7);
+  --shadow:0 8px 24px rgba(90,70,45,.18);
+  --shadow-sm:0 3px 10px rgba(90,70,45,.12);
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --display:"Cinzel","Noto Serif SC",serif;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+[hidden]{display:none !important;}
+html,body{margin:0;padding:0;min-height:100%;}
+body{
+  font-family:var(--serif);color:var(--ink);
+  background:var(--bg);background-attachment:fixed;
+  line-height:1.6;transition:color .25s;
+}
+::placeholder{color:var(--ink-soft);opacity:.7;}
+button{font-family:var(--serif);cursor:pointer;color:var(--ink);}
+input,textarea,select{font-family:var(--serif);color:var(--ink);}
+::selection{background:rgba(194,161,77,.35);}
+
+/* ===== 顶栏 ===== */
+#topbar{
+  position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:var(--glass);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--gold);box-shadow:0 2px 10px rgba(0,0,0,.06);
+  transition:background .25s,border-color .25s;
+}
+#worldTitle{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:.5px;flex:1;color:var(--ink);}
+.icon-btn{
+  width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);display:inline-flex;align-items:center;justify-content:center;
+  color:var(--gold);transition:.15s;
+}
+.icon-btn:hover{filter:brightness(1.05);}
+.icon-btn svg{width:22px;height:22px;}
+.ghost-btn{padding:7px 14px;border-radius:10px;border:1px solid var(--line-strong);background:transparent;font-size:14px;color:var(--ink-soft);transition:.15s;}
+.ghost-btn:hover{background:var(--card);color:var(--ink);}
+
+/* ===== 抽屉 ===== */
+#drawerMask{position:fixed;inset:0;background:rgba(40,30,20,.34);z-index:40;}
+#drawer{
+  position:fixed;top:0;left:0;height:100%;z-index:50;width:min(86%,360px);
+  background:linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 86%, #000 6%));
+  border-right:2px solid var(--gold);box-shadow:6px 0 28px rgba(0,0,0,.22);
+  transform:translateX(-104%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;backdrop-filter:blur(6px);
+}
+#drawer.open{transform:translateX(0);}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 12px;border-bottom:1px solid var(--line);}
+.drawer-title{font-family:var(--display);font-weight:600;font-size:17px;}
+.drawer-actions{display:flex;gap:8px;}
+.mini-btn{padding:6px 11px;border-radius:9px;font-size:13px;border:1px solid var(--line);background:var(--card);transition:.15s;}
+.mini-btn:hover{filter:brightness(1.04);}
+.mini-btn.gold{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 22%, transparent);}
+.world-list{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.world-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 13px;border-radius:14px;border:1px solid var(--line);background:var(--card);transition:.15s;position:relative;}
+.world-row:hover{filter:brightness(1.04);transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+.world-row.active{border-color:var(--gold);box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 40%, transparent);}
+.world-ico{width:38px;height:38px;border-radius:10px;flex:0 0 38px;display:inline-flex;align-items:center;justify-content:center;background:var(--card-2);border:1px solid var(--line);color:var(--gold);}
+.world-ico svg{width:22px;height:22px;}
+.world-meta{display:flex;flex-direction:column;flex:1;min-width:0;}
+.world-name{font-weight:600;font-size:15.5px;}
+.world-desc{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.world-edit{width:30px;height:30px;border-radius:8px;flex:0 0 30px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+.world-edit:hover{background:var(--card);color:var(--ink);}
+.drawer-foot{padding:12px 16px;font-size:12px;color:var(--ink-soft);border-top:1px solid var(--line);text-align:center;letter-spacing:.5px;}
+
+/* ===== 主内容 ===== */
+#content{padding:18px 16px 96px;max-width:820px;margin:0 auto;}
+.home-empty{text-align:center;padding:12vh 20px;color:var(--ink-soft);}
+.home-empty h1{font-family:var(--display);font-size:34px;color:var(--ink);margin:18px 0 10px;letter-spacing:2px;}
+.home-empty p{font-size:15px;line-height:2;}
+.crest{width:84px;height:84px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%, #fff, rgba(217,192,137,.4));border:1.5px solid var(--gold);color:var(--gold);box-shadow:var(--shadow-sm);}
+.crest svg{width:44px;height:44px;}
+.home-hint{margin-top:26px;font-size:12.5px;color:var(--gold);letter-spacing:1px;}
+
+.world-head{border-left:4px solid var(--gold);padding:10px 14px;margin-bottom:16px;border-radius:0 10px 10px 0;background:linear-gradient(90deg, color-mix(in srgb,var(--gold) 16%, transparent), transparent);}
+.world-head .wh-name{font-family:var(--display);font-weight:600;font-size:21px;}
+.world-head .wh-desc{font-size:13.5px;color:var(--ink-soft);margin-top:2px;}
+
+.section-bar{display:flex;align-items:center;gap:10px;margin:4px 2px 14px;flex-wrap:wrap;}
+.section-bar .sec-title{font-family:var(--display);font-size:16px;font-weight:600;flex:1;}
+.sec-btn{padding:7px 13px;border-radius:10px;font-size:13.5px;border:1px solid var(--line-strong);background:var(--card);transition:.15s;}
+.sec-btn:hover{filter:brightness(1.04);}
+.sec-btn.gold{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 22%, transparent);}
+
+/* ===== 卡片 ===== */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:12px;box-shadow:var(--shadow-sm);transition:.15s;position:relative;backdrop-filter:blur(4px);}
+.card:hover{filter:brightness(1.03);box-shadow:var(--shadow);transform:translateY(-1px);}
+.card-title{font-weight:600;font-size:16px;margin-bottom:4px;padding-right:24px;color:var(--ink);}
+.card-sub{font-size:13px;color:var(--ink-soft);}
+.card-preview{font-size:13.5px;color:var(--ink-soft);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.tag{font-size:12px;padding:2px 9px;border-radius:20px;background:var(--chip-bg);color:var(--chip-fg);border:1px solid var(--line);}
+.badge{font-size:11.5px;padding:2px 9px;border-radius:20px;letter-spacing:.5px;border:1px solid var(--line);color:var(--chip-fg);background:var(--chip-bg);}
+.badge.dream{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 50%, transparent);}
+.badge.search{color:var(--lav);}
+.badge.cat{color:var(--rose);}
+.card-x{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:13px;}
+.card-x:hover{background:var(--card);color:#b4452f;}
+
+.empty-hint{text-align:center;color:var(--ink-soft);font-size:14px;padding:30px 16px;border:1px dashed var(--line);border-radius:14px;background:var(--card);line-height:1.9;}
+
+.elem-group{margin-bottom:22px;}
+.elem-group h3{font-family:var(--display);font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin:0 0 10px;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:7px;}
+.elem-group h3 .g-ico{color:var(--gold);display:inline-flex;}
+.elem-group h3 .g-ico svg{width:18px;height:18px;}
+
+/* ===== 底部三菜单 ===== */
+#tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:var(--glass);backdrop-filter:blur(10px);border-top:1.5px solid var(--gold);padding:6px 6px calc(6px + env(safe-area-inset-bottom));transition:background .25s,border-color .25s;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:transparent;color:var(--ink-soft);border-radius:12px;transition:.15s;}
+.tab .tab-ico{color:var(--gold-soft);display:flex;}
+.tab .tab-ico svg{width:23px;height:23px;}
+.tab .tab-label{font-size:12.5px;letter-spacing:.5px;}
+.tab.active{color:var(--ink);background:color-mix(in srgb,var(--gold) 20%, transparent);}
+.tab.active .tab-ico{color:var(--gold);}
+
+.fab{position:fixed;right:18px;bottom:74px;z-index:35;width:54px;height:54px;border-radius:50%;border:1px solid var(--gold);background:radial-gradient(circle at 35% 30%, #fff, color-mix(in srgb,var(--gold) 55%, #fff));color:#5e4a1d;font-size:30px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:.15s;}
+.fab:hover{transform:scale(1.06) rotate(90deg);filter:brightness(1.05);}
+
+/* ===== Overlay / Sheet ===== */
+.overlay{position:fixed;inset:0;z-index:60;background:rgba(35,26,16,.42);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;}
+.sheet{background:linear-gradient(180deg, color-mix(in srgb,var(--panel) 92%, #fff), var(--panel));border:1.5px solid var(--gold);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;width:100%;animation:rise .22s ease;}
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.page-sheet{max-width:760px;height:94vh;}
+.modal-sheet{max-width:560px;max-height:90vh;}
+.sheet-head{display:flex;align-items:center;gap:10px;padding:16px 16px 10px;}
+.modal-title{font-family:var(--display);font-weight:600;font-size:17px;flex:1;color:var(--ink);}
+.big-input{flex:1;font-size:20px;font-weight:600;font-family:var(--display);border:none;background:transparent;padding:6px 4px;border-bottom:1px solid var(--line);color:var(--ink);}
+.big-input:focus{outline:none;border-bottom-color:var(--gold);}
+.close-x{border:1px solid var(--line);background:transparent;color:var(--ink-soft);}
+.close-x:hover{background:var(--card);color:var(--ink);}
+.sheet-meta{display:flex;gap:10px;padding:6px 16px 4px;flex-wrap:wrap;}
+.line-input{flex:1;min-width:140px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card-2);font-size:14px;color:var(--ink);}
+.line-input:focus{outline:none;border-color:var(--gold);}
+.line-input.full{width:100%;flex:none;}
+.big-text{flex:1;margin:10px 16px;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);font-size:15.5px;line-height:1.85;resize:none;color:var(--ink);background-image:linear-gradient(transparent 94%, color-mix(in srgb,var(--ink) 7%, transparent) 94%);background-size:100% 1.85em;background-attachment:local;}
+.big-text:focus{outline:none;border-color:var(--gold);}
+.sheet-foot{display:flex;align-items:center;gap:10px;padding:12px 16px 16px;}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;}
+.spacer{flex:1;}
+.gold-btn{padding:10px 18px;border-radius:11px;font-size:14.5px;font-weight:600;border:1px solid var(--gold);background:linear-gradient(180deg,var(--gold),var(--gold-soft));color:#3a2e12;box-shadow:var(--shadow-sm);transition:.15s;}
+.gold-btn:hover{filter:brightness(1.04);transform:translateY(-1px);}
+.danger-btn{padding:9px 15px;border-radius:11px;font-size:13.5px;border:1px solid rgba(180,69,47,.4);background:transparent;color:#b4452f;transition:.15s;}
+.danger-btn:hover{background:rgba(180,69,47,.1);}
+.modal-hint{font-size:13.5px;color:var(--ink-soft);margin:0 16px 10px;line-height:1.8;}
+.field-label{display:block;font-size:13px;color:var(--ink-soft);margin:12px 16px 5px;}
+.icon-pick{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;}
+.icon-opt{width:42px;height:42px;border-radius:11px;border:1px solid var(--line);background:var(--card-2);color:var(--gold);display:flex;align-items:center;justify-content:center;}
+.icon-opt svg{width:22px;height:22px;}
+.icon-opt.sel{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 28%, transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 35%, transparent);}
+.color-input{margin:0 16px 4px;width:54px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--card-2);}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;}
+.swatch{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);cursor:pointer;}
+.swatch.sel{box-shadow:0 0 0 2px var(--gold);}
+
+/* 关联 / 灵感来源 */
+.link-box{margin:4px 16px 0;border-top:1px solid var(--line);padding-top:10px;}
+.link-label{font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;}
+.link-list{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow-y:auto;}
+.link-item{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink);padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:var(--card-2);}
+.link-item input{width:17px;height:17px;accent-color:var(--gold);}
+.link-item.readonly{background:transparent;border-style:dashed;}
+
+/* ===== Toast ===== */
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;padding:11px 20px;border-radius:12px;background:rgba(40,32,22,.92);color:#F7EEDD;font-size:14px;letter-spacing:.5px;box-shadow:var(--shadow);animation:toastIn .2s ease;}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+
+@media (max-width:480px){.big-input{font-size:18px;}#content{padding:14px 12px 92px;}}
+
+
+/* ===== 阅读 / 编辑模式、搜索、图片 ===== */
+.overlay .read-controls{ display:inline-flex; }
+.overlay .editing-controls{ display:none; }
+.overlay.editing .read-controls{ display:none; }
+.overlay.editing .editing-controls{ display:inline-flex; }
+/* 阅读模式下输入框/文本域只可读、不灰、可复制选中 */
+.overlay:not(.editing) input.big-input,
+.overlay:not(.editing) input.line-input,
+.overlay:not(.editing) textarea.big-text{
+  background:transparent !important; border-color:transparent !important;
+  color:var(--ink); -webkit-user-select:text; user-select:text; cursor:default; resize:none;
+}
+.overlay:not(.editing) select.line-input{
+  -webkit-appearance:none; appearance:none; background:transparent !important;
+  border-color:transparent !important; color:var(--ink); pointer-events:none;
+}
+/* 关联词条的跳转链接 */
+.link-item.link-jump{ cursor:pointer; color:var(--lav); }
+.link-item.link-jump:hover{ text-decoration:underline; opacity:.92; }
+/* 搜索框 */
+.search-box{
+  width:100%; box-sizing:border-box; margin:12px 0 2px; padding:10px 13px;
+  border-radius:11px; border:1px solid var(--line); background:var(--card);
+  color:var(--ink); font-size:14px; font-family:inherit; outline:none;
+}
+.search-box:focus{ border-color:var(--gold); }
+.search-box::placeholder{ color:var(--ink-soft); }
+.search-count{ font-size:12px; color:var(--ink-soft); margin:2px 2px 10px; }
+/* 图片 */
+.img-row{ display:flex; align-items:center; gap:10px; margin:8px 0 2px; flex-wrap:wrap; }
+.img-row input[type=file]{ color:var(--ink-soft); font-size:13px; max-width:60%; }
+.img-prev{ display:block; max-width:100%; max-height:260px; border-radius:12px; margin:10px 0 2px; border:1px solid var(--line); }
+.card-img{ display:block; width:100%; max-height:200px; object-fit:cover; border-radius:12px; margin-top:10px; border:1px solid var(--line); background:var(--card-2); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <button id="drawerHandle" class="icon-btn" title="我的世界" aria-label="打开世界列表"></button>
+    <div id="worldTitle">梦境宇宙</div>
+    <button id="syncBtn" class="ghost-btn">☁ 同步</button>
+    <button id="exportBtn" class="ghost-btn" hidden>导出</button>
+  </header>
+
+  <div id="drawerMask" hidden></div>
+  <aside id="drawer">
+    <div class="drawer-head">
+      <span class="drawer-title">我的世界</span>
+      <div class="drawer-actions">
+        <button id="importBtn" class="mini-btn" title="从备份恢复">导入</button>
+        <button id="newWorldBtn" class="mini-btn gold">+ 新世界</button>
+      </div>
+    </div>
+    <div id="worldList" class="world-list"></div>
+    <div class="drawer-foot">
+      <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
+      为盘醋包饺子 · 梦境工作台
+    </div>
+    <input type="file" id="fileInput" accept="application/json" hidden>
+  </aside>
+
+  <main id="content">
+    <div id="homeEmpty" class="home-empty">
+      <div class="crest" id="crestIcon"></div>
+      <h1>梦境宇宙</h1>
+      <p>从左上角的卷轴打开你的世界。<br>
+         记录梦境碎片，手动补全世界观，<br>
+         慢慢攒出一本属于你的小说。</p>
+      <div class="home-hint">✦ 每个世界都能自定义主题色，恐怖可深紫，童话可淡绿 ✦</div>
+    </div>
+
+    <div id="worldView" hidden>
+      <div id="worldHead" class="world-head"></div>
+      <div id="fragmentsView" class="view"></div>
+      <div id="worldviewView" class="view" hidden></div>
+      <div id="elementsView" class="view" hidden></div>
+    </div>
+  </main>
+
+  <nav id="tabbar" hidden>
+    <button class="tab" data-tab="fragments">
+      <span class="tab-ico" data-ico="feather"></span><span class="tab-label">梦境碎片</span>
+    </button>
+    <button class="tab" data-tab="worldview">
+      <span class="tab-ico" data-ico="wand"></span><span class="tab-label">世界观完善</span>
+    </button>
+    <button class="tab" data-tab="elements">
+      <span class="tab-ico" data-ico="potion"></span><span class="tab-label">要素库</span>
+    </button>
+  </nav>
+
+  <button id="fab" class="fab" hidden title="新建">+</button>
+</div>
+
+<!-- 梦境碎片 全屏编辑器 -->
+<div id="fragOverlay" class="overlay" hidden>
+  <div class="sheet page-sheet">
+    <div class="sheet-head">
+      <input id="fragTitle" class="big-input" placeholder="梦境标题…">
+      <button class="icon-btn close-x" data-close="fragOverlay" aria-label="关闭">✕</button>
+    </div>
+    <div class="sheet-meta">
+      <input id="fragTags" class="line-input" placeholder="标签，用逗号分隔，如：走廊, 红衣, 窒息">
+      <input id="fragMood" class="line-input" placeholder="情绪，如：不安 / 怀念 / 荒诞">
+    </div>
+    <textarea id="fragContent" class="big-text" placeholder="把梦完整地写下来——画面、对白、气味、那种说不清的感觉。这里是一整页，随便写，随便滚，随时能拉回开头。"></textarea>
+    <div class="link-box">
+      <div class="link-label">已关联的设定卡 / 要素（自动汇总）</div>
+      <div id="fragLinked" class="link-list"></div>
+    </div>
+    <div class="sheet-foot">
+      <button id="fragExtract" class="ghost-btn">整理并委托 WorkBuddy</button>
+      <span class="spacer"></span>
+      <button id="fragEdit" class="gold-btn read-controls">修改</button>
+      <button id="fragDelete" class="danger-btn editing-controls" hidden>删除</button>
+      <button id="fragSave" class="gold-btn editing-controls">保存碎片</button>
+    </div>
+  </div>
+</div>
+
+<!-- 设定卡 全屏编辑器 -->
+<div id="cardOverlay" class="overlay" hidden>
+  <div class="sheet page-sheet">
+    <div class="sheet-head">
+      <input id="cardTitle" class="big-input" placeholder="设定卡标题…">
+      <button class="icon-btn close-x" data-close="cardOverlay" aria-label="关闭">✕</button>
+    </div>
+    <div class="sheet-meta">
+      <select id="cardCat" class="line-input">
+        <option value="民俗">民俗</option>
+        <option value="都市传说">都市传说</option>
+        <option value="科幻">科幻</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <textarea id="cardContent" class="big-text" placeholder="把这条设定写下来——它的来历、规矩、在梦里如何显现……整页书写，随时可滚回开头。"></textarea>
+    <label class="field-label">配图（人物外貌 / 世界地图等，可选）</label>
+    <div class="img-row editing-controls">
+      <input type="file" id="cardImg" accept="image/*" class="line-input">
+      <button type="button" class="sec-btn" id="cardImgDel">移除图片</button>
+    </div>
+    <img id="cardImgPrev" class="img-prev" alt="设定卡配图" hidden>
+    <div class="link-box">
+      <div class="link-label">灵感来源碎片（可多选，建立与梦境的关联）</div>
+      <div id="cardFragLinks" class="link-list"></div>
+    </div>
+    <div class="sheet-foot">
+      <span class="spacer"></span>
+      <button id="cardEdit" class="gold-btn read-controls">修改</button>
+      <button id="cardDelete" class="danger-btn editing-controls" hidden>删除</button>
+      <button id="cardSave" class="gold-btn editing-controls">保存设定卡</button>
+    </div>
+  </div>
+</div>
+
+<!-- 要素 编辑器 -->
+<div id="elemOverlay" class="overlay" hidden>
+  <div class="sheet page-sheet">
+    <div class="sheet-head">
+      <input id="elemName" class="big-input" placeholder="要素名称…">
+      <button class="icon-btn close-x" data-close="elemOverlay" aria-label="关闭">✕</button>
+    </div>
+    <div class="sheet-meta">
+      <select id="elemType" class="line-input">
+        <option value="人物">人物</option>
+        <option value="地点">地点</option>
+        <option value="规则">规则 / 魔法体系</option>
+        <option value="物件">物件 / 道具</option>
+      </select>
+      <select id="elemSource" class="line-input">
+        <option value="梦境">来自梦境</option>
+        <option value="搜索">来自搜索</option>
+      </select>
+    </div>
+    <textarea id="elemDesc" class="big-text" placeholder="这个要素是什么？长什么样、有什么规矩、在梦里发生了什么……整页书写。"></textarea>
+    <label class="field-label">配图（外貌特征 / 地图等，可选）</label>
+    <div class="img-row editing-controls">
+      <input type="file" id="elemImg" accept="image/*" class="line-input">
+      <button type="button" class="sec-btn" id="elemImgDel">移除图片</button>
+    </div>
+    <img id="elemImgPrev" class="img-prev" alt="要素配图" hidden>
+    <div class="link-box">
+      <div class="link-label">灵感来源碎片（可多选，建立与梦境的关联）</div>
+      <div id="elemFragLinks" class="link-list"></div>
+    </div>
+    <div class="sheet-foot">
+      <span class="spacer"></span>
+      <button id="elemEdit" class="gold-btn read-controls">修改</button>
+      <button id="elemDelete" class="danger-btn editing-controls" hidden>删除</button>
+      <button id="elemSave" class="gold-btn editing-controls">保存要素</button>
+    </div>
+  </div>
+</div>
+
+<!-- 委托 WorkBuddy：生成 prompt -->
+<div id="promptModal" class="overlay" hidden>
+  <div class="sheet modal-sheet">
+    <div class="sheet-head">
+      <span class="modal-title" id="promptTitle">委托 WorkBuddy</span>
+      <button class="icon-btn close-x" data-close="promptModal" aria-label="关闭">✕</button>
+    </div>
+    <select id="promptFragPick" class="line-input full" hidden></select>
+    <p class="modal-hint">下面这段已经帮你写好，复制后直接发到聊天里给我（可选）。我来联网检索民俗 / 都市传说 / 科幻设定，并把结果整理成设定卡发回你。纯手动录入也完全没问题。</p>
+    <textarea id="promptText" class="big-text" readonly></textarea>
+    <div class="sheet-foot">
+      <span class="spacer"></span>
+      <button id="promptCopy" class="gold-btn">复制并发给 WorkBuddy</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入：粘贴 WorkBuddy 返回内容 -->
+<div id="importModal" class="overlay" hidden>
+  <div class="sheet modal-sheet">
+    <div class="sheet-head">
+      <span class="modal-title" id="importTitle">粘贴导入</span>
+      <button class="icon-btn close-x" data-close="importModal" aria-label="关闭">✕</button>
+    </div>
+    <p class="modal-hint" id="importHint"></p>
+    <textarea id="importText" class="big-text" placeholder="把内容粘贴到这里…"></textarea>
+    <div class="sheet-foot">
+      <span class="spacer"></span>
+      <button id="importParse" class="gold-btn">解析并导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 世界 编辑 -->
+<div id="worldModal" class="overlay" hidden>
+  <div class="sheet modal-sheet">
+    <div class="sheet-head">
+      <span class="modal-title" id="worldModalTitle">新世界</span>
+      <button class="icon-btn close-x" data-close="worldModal" aria-label="关闭">✕</button>
+    </div>
+    <label class="field-label">世界名称</label>
+    <input id="worldName" class="line-input full" placeholder="如：灵异恐怖">
+    <label class="field-label">一句话设定</label>
+    <input id="worldDesc" class="line-input full" placeholder="这个世界的基调，方便之后参考">
+    <label class="field-label">主题色（决定整个世界的氛围）</label>
+    <div id="worldSwatches" class="swatches"></div>
+    <label class="field-label">自定义颜色</label>
+    <input id="worldColor" type="color" class="color-input" value="#3b2a63">
+    <label class="field-label">图标</label>
+    <div id="worldIconPick" class="icon-pick"></div>
+    <div class="sheet-foot">
+      <button id="worldDelete" class="danger-btn" hidden>删除此世界</button>
+      <span class="spacer"></span>
+      <button id="worldSave" class="gold-btn">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ===== 梦境宇宙 · 本地工作台逻辑 ===== */
+(function(){
+  'use strict';
+
+  /* ---------- 图标（细线魔法，非哈利波特专属） ---------- */
+  var ICONS = {
+    scroll:'<path d="M6 4h12v15H6z"/><path d="M6 4C4 4 4 6 6 6"/><path d="M18 19c2 0 2-2 0-2"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',
+    feather:'<path d="M20 4C12 4 6 9 4 18l2 2c9-2 14-8 14-16z"/><path d="M5 20l3-1"/><path d="M9.5 13.5c3-3 6-4 9-4"/>',
+    wand:'<path d="M5 19L16 8"/><path d="M17 4l1.1 2.2 2.2 1.1-2.2 1.1L17 13l-1.1-2.2-2.2-1.1 2.2-1.1z"/>',
+    potion:'<path d="M9 3h6"/><path d="M10 3v5l-4 8a3 3 0 003 5h6a3 3 0 003-5l-4-8V3"/><path d="M7.5 14h9"/><path d="M9 17h6"/>',
+    broom:'<path d="M14 3l7 7"/><path d="M14 3L7 17"/><path d="M7 17l-3 5 5.5-2.2L16 12z"/>',
+    crystal:'<path d="M12 3l4 6-4 12-4-12z"/><path d="M8 9h8"/><path d="M10 14h4"/>',
+    star:'<path d="M12 3l2.4 6.1 6.6.5-5 4.2 1.6 6.4L12 16.8 6.4 20.2 8 13.8l-5-4.2 6.6-.5z"/>',
+    moon:'<path d="M20 14.5A8 8 0 119 3.5a6.5 6.5 0 0011 11z"/>',
+    book:'<path d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2z"/><path d="M20 5a2 2 0 00-2-2h-6v16h6a2 2 0 012 2z"/>',
+    orb:'<path d="M12 5 A7 7 0 1 0 12 19 A5 5 0 1 1 12 5z" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="9" ry="3.2" transform="rotate(-18 12 12)" fill="none" stroke="currentColor" stroke-width="1.3" opacity="0.85"/>'
+  };
+  function icon(name, cls){
+    var p = ICONS[name] || ICONS.scroll;
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '+
+      'stroke-linecap="round" stroke-linejoin="round" class="'+(cls||'')+'">' + p + '</svg>';
+  }
+  var ICON_KEYS = ['scroll','feather','wand','potion','broom','crystal','star','moon','book','orb'];
+
+  /* ---------- 颜色工具 ---------- */
+  function hexToRgb(h){ h=(h||'#000').replace('#',''); if(h.length===3) h=h.split('').map(function(c){return c+c;}).join(''); var n=parseInt(h,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function lum(hex){ var o=hexToRgb(hex); return (0.299*o.r+0.587*o.g+0.114*o.b)/255; }
+  function mix(a,b,t){ var x=hexToRgb(a),y=hexToRgb(b); return 'rgb('+Math.round(x.r+(y.r-x.r)*t)+','+Math.round(x.g+(y.g-x.g)*t)+','+Math.round(x.b+(y.b-x.b)*t)+')'; }
+  function rgba(hex,a){ var o=hexToRgb(hex); return 'rgba('+o.r+','+o.g+','+o.b+','+a+')'; }
+  function lighten(hex,t){ return mix(hex,'#ffffff',t); }
+  var PRESET_COLORS = ['#3b2a63','#2a3a5a','#cdbbe6','#f0c9dc','#bfe3c4','#bcd6e6','#d9c08a','#2b2b30'];
+
+  /* ---------- 存储（IndexedDB） ---------- */
+  var DB_NAME='dreamverse', STORE='kv', KEY='state', dbPromise=null;
+  function openDB(){
+    if(dbPromise) return dbPromise;
+    dbPromise=new Promise(function(res,rej){
+      var r=indexedDB.open(DB_NAME,1);
+      r.onupgradeneeded=function(){ r.result.createObjectStore(STORE); };
+      r.onsuccess=function(){ res(r.result); };
+      r.onerror=function(){ rej(r.error); };
+    });
+    return dbPromise;
+  }
+  function loadState(){ return openDB().then(function(db){ return new Promise(function(res,rej){ var tx=db.transaction(STORE,'readonly'),st=tx.objectStore(STORE),rq=st.get(KEY); rq.onsuccess=function(){res(rq.result||null);}; rq.onerror=function(){rej(rq.error);}; }); }); }
+  function saveState(){ return openDB().then(function(db){ return new Promise(function(res,rej){ var tx=db.transaction(STORE,'readwrite'),st=tx.objectStore(STORE),rq=st.put(state,KEY); rq.onsuccess=function(){ try{ scheduleSync(); }catch(e){} res(); }; rq.onerror=function(){ rej(rq.error); }; }); }); }
+
+  /* ---------- 状态 ---------- */
+  var state={ worlds:[], activeWorldId:null };
+  var activeTab='fragments';
+  var editingFragId=null, editingElemId=null, editingCardId=null;
+  var worldModalId=null, worldModalIcon='scroll', worldModalColor='#c9a06a';
+  var wvFilter='', elFilter='';
+  var cardImgData='', elemImgData='';
+  var importType=null;
+
+  function uid(){ return (crypto.randomUUID && crypto.randomUUID()) || ('w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)); }
+  function $(s){ return document.querySelector(s); }
+  function $all(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function activeWorld(){ return state.worlds.filter(function(w){return w.id===state.activeWorldId;})[0] || null; }
+  function esc2(s){ return String(s==null?'':s).replace(/\n/g,' '); }
+
+  var toastTimer=null;
+  function toast(msg){ var t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.hidden=true; },2200); }
+  function copyText(txt){
+    if(navigator.clipboard && navigator.clipboard.writeText){ return navigator.clipboard.writeText(txt).catch(function(){ fallbackCopy(txt); }); }
+    return Promise.resolve(fallbackCopy(txt));
+  }
+  function fallbackCopy(txt){ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+  function clearAppCache(){
+    return Promise.all([
+      (navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister(); })); }) : Promise.resolve()),
+      (window.caches ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }) : Promise.resolve())
+    ]).catch(function(){ return true; });
+  }
+
+  /* ---------- 主题（每世界自定义背景，深/浅自动适配） ---------- */
+  function applyTheme(color){
+    var root=document.documentElement, dark = lum(color) < 0.5;
+    var pink = dark ? rgba('#E3B6C8',0.22) : rgba('#E3B6C8',0.45);
+    var lav  = dark ? rgba('#CBB9E0',0.22) : rgba('#CBB9E0',0.5);
+    var stars = dark
+      ? 'radial-gradient(1.5px 1.5px at 18% 26%, rgba(255,255,255,.55), transparent),'+
+        'radial-gradient(1.5px 1.5px at 64% 54%, rgba(255,255,255,.45), transparent),'+
+        'radial-gradient(1.5px 1.5px at 40% 82%, rgba(255,255,255,.4), transparent),'
+      : '';
+    var bg = 'radial-gradient(900px 520px at 82% -12%, '+pink+', transparent 60%),'+
+             'radial-gradient(820px 520px at -8% 112%, '+lav+', transparent 60%),'+
+             stars+
+             'repeating-linear-gradient(46deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 8px),'+
+             'linear-gradient(162deg, '+lighten(color, dark?0.14:0.4)+', '+color+')';
+    root.style.setProperty('--bg', bg);
+    var v = dark ? {
+      '--panel':'rgba(18,14,30,0.72)','--glass':'rgba(255,255,255,0.10)',
+      '--card':'rgba(255,249,240,0.10)','--card-2':'rgba(255,249,240,0.14)',
+      '--ink':'#F4ECDB','--ink-soft':'rgba(244,236,219,0.66)',
+      '--line':'rgba(255,255,255,0.16)','--line-strong':'rgba(255,255,255,0.34)',
+      '--gold':'#E8D29A','--gold-soft':'#F2DDAE','--lav':'rgba(203,185,224,0.8)','--rose':'rgba(227,182,200,0.8)',
+      '--chip-bg':'rgba(255,255,255,0.14)','--chip-fg':'rgba(244,236,219,0.82)',
+      '--shadow':'0 10px 26px rgba(0,0,0,0.40)','--shadow-sm':'0 3px 10px rgba(0,0,0,0.30)'
+    } : {
+      '--panel':'rgba(247,238,221,0.96)','--glass':'rgba(255,251,242,0.80)',
+      '--card':'rgba(255,255,255,0.82)','--card-2':'rgba(255,255,255,0.95)',
+      '--ink':'#3f362c','--ink-soft':'rgba(63,54,44,0.66)',
+      '--line':'rgba(90,70,45,0.18)','--line-strong':'rgba(90,70,45,0.36)',
+      '--gold':'#B58E36','--gold-soft':'#D9C089','--lav':'#CBB9E0','--rose':'#E3B6C8',
+      '--chip-bg':'rgba(90,70,45,0.12)','--chip-fg':'rgba(63,54,44,0.7)',
+      '--shadow':'0 8px 24px rgba(90,70,45,0.18)','--shadow-sm':'0 3px 10px rgba(90,70,45,0.12)'
+    };
+    Object.keys(v).forEach(function(k){ root.style.setProperty(k, v[k]); });
+    root.classList.toggle('theme-dark', dark); root.classList.toggle('theme-light', !dark);
+  }
+  function resetTheme(){
+    var root=document.documentElement;
+    ['--bg','--panel','--glass','--card','--card-2','--ink','--ink-soft','--line','--line-strong','--gold','--gold-soft','--lav','--rose','--chip-bg','--chip-fg','--shadow','--shadow-sm'].forEach(function(k){ root.style.removeProperty(k); });
+    root.classList.remove('theme-dark','theme-light');
+  }
+
+  /* ---------- 初始化 ---------- */
+  function init(){
+    $('#drawerHandle').innerHTML = icon('scroll');
+    $('#crestIcon').innerHTML = icon('orb');
+    $all('.tab-ico').forEach(function(el){ el.innerHTML = icon(el.getAttribute('data-ico')); });
+    loadState().then(function(s){
+      if(s && s.worlds){ state=s; } else { seedWorlds(); }
+      renderWorldList();
+      if(activeWorld()){ selectWorld(state.activeWorldId, true); } else { showHome(); }
+      var _sc=syncCfg(); if(_sc && _sc.token && _sc.auto){ syncNow(true); }
+    }).catch(function(){ seedWorlds(); renderWorldList(); showHome(); var _sc=syncCfg(); if(_sc && _sc.token && _sc.auto){ syncNow(true); } });
+    bindEvents();
+    registerSW();
+  }
+  function registerSW(){
+    try{ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); } }catch(e){}
+  }
+  function seedWorlds(){
+    state.worlds=[
+      { id:uid(), name:'灵异恐怖', icon:'moon', themeColor:'#3b2a63', desc:'以民间诡异传闻为底色的恐怖梦境', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
+      { id:uid(), name:'鬼怪童话', icon:'star', themeColor:'#bfe3c4', desc:'似真似幻、带着童谣气味的怪谈', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
+      { id:uid(), name:'末世生存', icon:'crystal', themeColor:'#c2a36a', desc:'文明崩坏后的求生与重建', createdAt:Date.now(), fragments:[], elements:[], cards:[] }
+    ];
+    state.activeWorldId=null; saveState();
+  }
+
+  /* ---------- 事件 ---------- */
+  function bindEvents(){
+    $('#drawerHandle').addEventListener('click', toggleDrawer);
+    $('#drawerMask').addEventListener('click', closeDrawer);
+    $('#newWorldBtn').addEventListener('click', function(){ openWorldModal(null); });
+    $('#importBtn').addEventListener('click', function(){ $('#fileInput').click(); });
+    $('#fileInput').addEventListener('change', importWorld);
+    $('#exportBtn').addEventListener('click', exportWorld);
+    $('#syncBtn').addEventListener('click', openSync);
+    $('#syncSaveToken').addEventListener('click', function(){
+      var t=$('#syncToken').value.trim(); if(!t){ toast('请先粘贴令牌'); return; }
+      $('#syncStatus').textContent='令牌已保存，正在连接码云…';
+      giteeUser(t).then(function(u){ return ensureRepo(t, u.login).then(function(){ return u.login; }); })
+        .then(function(login){
+          var c=syncCfg()||{}; c.token=t; c.auto=$('#syncAuto').checked; c.login=login; c.lastSync=Date.now(); setSyncCfg(c);
+          $('#syncStatus').textContent='已连接码云（'+login+'）· 可点「立即同步」'; toast('云同步已连接');
+        })
+        .catch(function(e){ $('#syncStatus').textContent='连接失败：'+(e&&e.message); });
+    });
+    $('#syncNow').addEventListener('click', function(){ syncNow(false); });
+    $('#syncAuto').addEventListener('change', function(){ var c=syncCfg()||{}; if(!c.token) c.token=$('#syncToken').value.trim(); c.auto=this.checked; setSyncCfg(c); });
+    $('#syncClear').addEventListener('click', function(){ if(confirm('清除本机保存的令牌？（云端仓库里的数据仍在，重新粘贴可再连）')){ localStorage.removeItem('dv_sync'); $('#syncToken').value=''; $('#syncStatus').textContent='已清除'; } });
+    $('#clearCacheBtn').addEventListener('click', function(){ clearAppCache().then(function(){ toast('正在清除缓存…'); setTimeout(function(){ location.reload(true); },300); }); });
+    $all('[data-close]').forEach(function(b){ b.addEventListener('click', function(){ $('#'+b.getAttribute('data-close')).hidden=true; }); });
+    $all('.overlay').forEach(function(ov){ ov.addEventListener('click', function(e){ if(e.target===ov) ov.hidden=true; }); });
+    $all('.tab').forEach(function(t){ t.addEventListener('click', function(){ setTab(t.getAttribute('data-tab')); }); });
+    $('#fab').addEventListener('click', function(){
+      if(activeTab==='fragments') openFragEditor(null);
+      else if(activeTab==='worldview') openCardEditor(null);
+      else if(activeTab==='elements') openElemEditor(null);
+    });
+    // 碎片
+    $('#fragSave').addEventListener('click', saveFrag);
+    $('#fragDelete').addEventListener('click', deleteFrag);
+    $('#fragExtract').addEventListener('click', fragExtract);
+    $('#fragEdit').addEventListener('click', function(){ setReadMode($('#fragOverlay'), true); setTimeout(function(){ $('#fragTitle').focus(); },50); });
+    // 设定卡
+    $('#cardSave').addEventListener('click', saveCard);
+    $('#cardDelete').addEventListener('click', deleteCard);
+    $('#cardEdit').addEventListener('click', function(){ setReadMode($('#cardOverlay'), true); setTimeout(function(){ $('#cardTitle').focus(); },50); });
+    $('#cardImg').addEventListener('change', function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ cardImgData=r.result; renderCardImgPrev(); }; r.readAsDataURL(f); });
+    $('#cardImgDel').addEventListener('click', function(){ cardImgData=''; renderCardImgPrev(); $('#cardImg').value=''; });
+    // 要素
+    $('#elemSave').addEventListener('click', saveElem);
+    $('#elemDelete').addEventListener('click', deleteElem);
+    $('#elemEdit').addEventListener('click', function(){ setReadMode($('#elemOverlay'), true); setTimeout(function(){ $('#elemName').focus(); },50); });
+    $('#elemImg').addEventListener('change', function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ elemImgData=r.result; renderElemImgPrev(); }; r.readAsDataURL(f); });
+    $('#elemImgDel').addEventListener('click', function(){ elemImgData=''; renderElemImgPrev(); $('#elemImg').value=''; });
+    // prompt / import / world
+    $('#promptCopy').addEventListener('click', function(){ copyText($('#promptText').value); toast('已复制，去聊天里发给我吧 ✦'); });
+    $('#promptFragPick').addEventListener('change', refreshWorldviewPrompt);
+    $('#promptFragPick').addEventListener('input', refreshWorldviewPrompt);
+    $('#importParse').addEventListener('click', doImportParse);
+    $('#worldSave').addEventListener('click', saveWorld);
+    $('#worldDelete').addEventListener('click', deleteWorld);
+  }
+
+  /* ---------- 抽屉 / 世界 ---------- */
+  function toggleDrawer(){ var d=$('#drawer'); d.classList.toggle('open'); $('#drawerMask').hidden=!d.classList.contains('open'); }
+  function closeDrawer(){ $('#drawer').classList.remove('open'); $('#drawerMask').hidden=true; }
+  function renderWorldList(){
+    var list=$('#worldList'); list.innerHTML='';
+    state.worlds.forEach(function(w){
+      var row=document.createElement('div');
+      row.className='world-row'+(w.id===state.activeWorldId?' active':'');
+      row.setAttribute('data-id',w.id);
+      row.innerHTML='<span class="world-ico" style="color:'+esc(w.themeColor)+'">'+icon(w.icon)+'</span>'+
+        '<span class="world-meta"><span class="world-name">'+esc(w.name)+'</span>'+
+        '<span class="world-desc">'+esc(w.desc||'（未设定基调）')+'</span></span>'+
+        '<button class="world-edit" data-edit="1" title="编辑">✎</button>';
+      row.addEventListener('click', function(e){
+        if(e.target.closest('[data-edit]')){ e.stopPropagation(); openWorldModal(w.id); return; }
+        selectWorld(w.id); closeDrawer();
+      });
+      list.appendChild(row);
+    });
+  }
+  function openWorldModal(id){
+    worldModalId=id;
+    var w=id?state.worlds.filter(function(x){return x.id===id;})[0]:null;
+    $('#worldModalTitle').textContent=id?'编辑世界':'新世界';
+    $('#worldName').value=w?w.name:'';
+    $('#worldDesc').value=w?w.desc:'';
+    worldModalColor=w?w.themeColor:'#3b2a63';
+    worldModalIcon=w?w.icon:'scroll';
+    $('#worldDelete').hidden=!id;
+    var sw=$('#worldSwatches'); sw.innerHTML='';
+    PRESET_COLORS.forEach(function(c){
+      var b=document.createElement('button'); b.className='swatch'+(c.toLowerCase()===worldModalColor.toLowerCase()?' sel':'');
+      b.style.background=c; b.setAttribute('data-c',c);
+      b.addEventListener('click', function(){ worldModalColor=c; $('#worldColor').value=c;
+        $all('#worldSwatches .swatch').forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel'); });
+      sw.appendChild(b);
+    });
+    $('#worldColor').value=worldModalColor;
+    $('#worldColor').addEventListener('input', function(){ worldModalColor=$('#worldColor').value;
+      $all('#worldSwatches .swatch').forEach(function(x){x.classList.remove('sel');}); });
+    var pick=$('#worldIconPick'); pick.innerHTML='';
+    ICON_KEYS.forEach(function(k){
+      var b=document.createElement('button'); b.className='icon-opt'+(k===worldModalIcon?' sel':''); b.innerHTML=icon(k);
+      b.addEventListener('click', function(){ worldModalIcon=k; $all('#worldIconPick .icon-opt').forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel'); });
+      pick.appendChild(b);
+    });
+    $('#worldModal').hidden=false;
+  }
+  function saveWorld(){
+    var name=$('#worldName').value.trim()||'未命名世界';
+    var desc=$('#worldDesc').value.trim();
+    if(worldModalId){
+      var w=state.worlds.filter(function(x){return x.id===worldModalId;})[0];
+      w.name=name; w.desc=desc; w.themeColor=worldModalColor; w.icon=worldModalIcon;
+    } else {
+      state.worlds.push({ id:uid(), name:name, icon:worldModalIcon, themeColor:worldModalColor, desc:desc, createdAt:Date.now(), fragments:[], elements:[], cards:[] });
+    }
+    saveState(); renderWorldList(); $('#worldModal').hidden=true;
+    if(activeWorld()){ applyTheme(activeWorld().themeColor); renderWorldHead(); }
+  }
+  function deleteWorld(){
+    if(!worldModalId) return;
+    var w=state.worlds.filter(function(x){return x.id===worldModalId;})[0];
+    if(!confirm('确定删除世界「'+w.name+'」？其中的梦境碎片、要素与设定卡都会一并消失。')) return;
+    state.worlds=state.worlds.filter(function(x){return x.id!==worldModalId;});
+    if(state.activeWorldId===worldModalId){ state.activeWorldId=state.worlds.length?state.worlds[0].id:null; }
+    saveState(); renderWorldList(); $('#worldModal').hidden=true;
+    if(activeWorld()){ selectWorld(state.activeWorldId,true); } else { showHome(); }
+  }
+
+  /* ---------- 视图切换 ---------- */
+  function showHome(){ $('#homeEmpty').hidden=false; $('#worldView').hidden=true; $('#tabbar').hidden=true; $('#fab').hidden=true; $('#exportBtn').hidden=true; $('#worldTitle').textContent='梦境宇宙'; resetTheme(); }
+  function selectWorld(id){
+    state.activeWorldId=id; saveState();
+    $('#homeEmpty').hidden=true; $('#worldView').hidden=false; $('#tabbar').hidden=false; $('#exportBtn').hidden=false;
+    var w=activeWorld(); if(!w) return;
+    applyTheme(w.themeColor);
+    wvFilter=''; elFilter='';
+    $('#worldviewView').innerHTML=''; $('#elementsView').innerHTML='';
+    renderWorldList(); renderWorldHead(); setTab(activeTab);
+  }
+  function renderWorldHead(){
+    var w=activeWorld(); if(!w) return;
+    $('#worldTitle').textContent=w.name;
+    $('#worldHead').innerHTML='<div class="wh-name">'+esc(w.name)+'</div>'+(w.desc?'<div class="wh-desc">'+esc(w.desc)+'</div>':'');
+  }
+  function setTab(tab){
+    activeTab=tab;
+    $all('.tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-tab')===tab); });
+    $('#fragmentsView').hidden=tab!=='fragments';
+    $('#worldviewView').hidden=tab!=='worldview';
+    $('#elementsView').hidden=tab!=='elements';
+    $('#fab').hidden=false;
+    if(tab==='fragments') renderFragments();
+    else if(tab==='worldview') renderWorldview();
+    else if(tab==='elements') renderElements();
+  }
+
+  /* ---------- 梦境碎片 ---------- */
+  function renderFragments(){
+    var w=activeWorld(), box=$('#fragmentsView');
+    var html='<div class="section-bar"><span class="sec-title">梦境碎片</span><button class="sec-btn gold" id="fragNew">+ 新建碎片</button></div>';
+    if(!w.fragments.length){
+      html+='<div class="empty-hint">还没有梦境碎片。<br>点右下角「+」或上方按钮，打开整页便签把梦原原本本写下来。</div>';
+    } else {
+      w.fragments.slice().sort(function(a,b){return (b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt);}).forEach(function(f){
+        var tags=(f.tags||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('');
+        html+='<div class="card" data-fid="'+f.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
+          '<div class="card-title">'+esc(f.title||'（无标题）')+'</div>'+
+          (f.mood?'<div class="card-sub">情绪：'+esc(f.mood)+'</div>':'')+
+          '<div class="card-preview">'+esc(f.content||'')+'</div>'+(tags?'<div class="tag-row">'+tags+'</div>':'')+'</div>';
+      });
+    }
+    box.innerHTML=html;
+    $('#fragNew').addEventListener('click', function(){ openFragEditor(null); });
+    $all('#fragmentsView .card').forEach(function(c){
+      c.addEventListener('click', function(e){
+        if(e.target.closest('[data-x]')){
+          var id=c.getAttribute('data-fid'), f=getFrag(id);
+          if(confirm('删除这条梦境碎片「'+(f.title||'')+'」？')){ deleteFragById(id); }
+          return;
+        }
+        openFragEditor(c.getAttribute('data-fid'));
+      });
+    });
+  }
+  function getFrag(id){ return activeWorld().fragments.filter(function(f){return f.id===id;})[0]; }
+  function openFragEditor(id){
+    editingFragId=id; var f=id?getFrag(id):null;
+    $('#fragTitle').value=f?f.title:'';
+    $('#fragTags').value=f?(f.tags||[]).join(', '):'';
+    $('#fragMood').value=f?f.mood:'';
+    $('#fragContent').value=f?f.content:'';
+    $('#fragDelete').hidden=!id;
+    renderFragLinked(f);
+    setReadMode($('#fragOverlay'), !id);
+    $('#fragOverlay').hidden=false;
+    if(!id){ setTimeout(function(){ $('#fragTitle').focus(); },50); }
+  }
+  function setReadMode(ov, editing){
+    ov.classList.toggle('editing', editing);
+    var f=ov.querySelectorAll('input, textarea, select');
+    for(var i=0;i<f.length;i++){
+      var el=f[i];
+      if(el.type==='checkbox'||el.type==='radio'){ continue; }
+      if(el.type==='file'){ el.disabled=!editing; continue; }
+      if(el.classList.contains('search-box')){ continue; }
+      if(el.tagName==='SELECT'){ el.style.pointerEvents = editing ? '' : 'none'; }
+      else { el.readOnly = !editing; }
+    }
+    var cbs=ov.querySelectorAll('.link-list input[type=checkbox]');
+    for(var j=0;j<cbs.length;j++){ cbs[j].disabled=!editing; }
+  }
+  function renderCardImgPrev(){
+    var prev=$('#cardImgPrev');
+    if(cardImgData){ prev.src=cardImgData; prev.hidden=false; } else { prev.removeAttribute('src'); prev.hidden=true; }
+  }
+  function renderElemImgPrev(){
+    var prev=$('#elemImgPrev');
+    if(elemImgData){ prev.src=elemImgData; prev.hidden=false; } else { prev.removeAttribute('src'); prev.hidden=true; }
+  }
+  function renderFragLinked(f){
+    var w=activeWorld(), box=$('#fragLinked'); box.innerHTML='';
+    if(!f){ return; }
+    var cards=(w.cards||[]).filter(function(c){ return (c.frags||[]).indexOf(f.id)>=0; });
+    var elems=(w.elements||[]).filter(function(e){ return (e.frags||[]).indexOf(f.id)>=0; });
+    if(!cards.length && !elems.length){ box.innerHTML='<div class="link-item readonly">（暂未关联任何设定卡 / 要素）</div>'; return; }
+    cards.forEach(function(c){
+      var d=document.createElement('div'); d.className='link-item link-jump'; d.setAttribute('data-cid', c.id);
+      d.textContent='◆ 设定卡：'+esc(c.title||'（无标题）');
+      d.addEventListener('click', function(){ if(confirm('跳转到对应的设定卡「'+(c.title||'')+'」？')) openCardEditor(c.id); });
+      box.appendChild(d);
+    });
+    elems.forEach(function(e){
+      var d=document.createElement('div'); d.className='link-item link-jump'; d.setAttribute('data-eid', e.id);
+      d.textContent='◇ 要素：'+esc(e.name||'（未命名）');
+      d.addEventListener('click', function(){ if(confirm('跳转到对应的要素「'+(e.name||'')+'」？')) openElemEditor(e.id); });
+      box.appendChild(d);
+    });
+  }
+  function saveFrag(){
+    var w=activeWorld(), title=$('#fragTitle').value.trim(), content=$('#fragContent').value;
+    var tags=$('#fragTags').value.split(',').map(function(s){return s.trim();}).filter(Boolean), mood=$('#fragMood').value.trim();
+    if(!title && !content){ toast('写点什么再保存吧'); return; }
+    if(editingFragId){ var f=getFrag(editingFragId); f.title=title; f.content=content; f.tags=tags; f.mood=mood; f.updatedAt=Date.now(); }
+    else { w.fragments.push({ id:uid(), title:title, content:content, tags:tags, mood:mood, createdAt:Date.now(), updatedAt:Date.now() }); }
+    saveState(); $('#fragOverlay').hidden=true; renderFragments(); toast('已存入梦境碎片 ✦');
+  }
+  function deleteFragById(id){
+    var w=activeWorld();
+    w.fragments=w.fragments.filter(function(x){return x.id!==id;});
+    (w.cards||[]).forEach(function(c){ c.frags=(c.frags||[]).filter(function(f){return f!==id;}); });
+    (w.elements||[]).forEach(function(e){ e.frags=(e.frags||[]).filter(function(f){return f!==id;}); });
+    saveState(); $('#fragOverlay').hidden=true; renderFragments();
+  }
+  function deleteFrag(){
+    if(!editingFragId) return;
+    var f=getFrag(editingFragId);
+    if(!confirm('删除这条梦境碎片「'+(f.title||'')+'」？')) return;
+    deleteFragById(editingFragId);
+  }
+  function fragExtract(){
+    var f=getFrag(editingFragId); if(!f){ toast('先保存这条碎片再委托'); return; }
+    var w=activeWorld();
+    var txt='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有某类就省略该标题）：\n\n'+
+      '## 人物\n- 名称：一句话设定\n## 地点\n- 名称：一句话设定\n## 规则（魔法 / 世界观）\n- 名称：一句话设定\n## 物件\n- 名称：一句话设定\n\n'+
+      '【世界背景】'+esc2(w.name)+'：'+(w.desc||'（未设定）')+'\n【梦境碎片】\n标题：'+(f.title||'（无标题）')+'\n内容：\n'+f.content+'\n';
+    openPrompt('extract', txt);
+  }
+
+  /* ---------- 世界观完善（设定卡，整页手动） ---------- */
+  function renderWorldview(){
+    var box=$('#worldviewView');
+    if(!box.querySelector('#wvList')){
+      box.innerHTML='<div class="section-bar"><span class="sec-title">世界观完善</span>'+
+        '<button class="sec-btn" id="wvImport">粘贴导入</button>'+
+        '<button class="sec-btn" id="wvAsk">委托补全</button>'+
+        '<button class="sec-btn gold" id="cardNew">+ 新建设定卡</button></div>'+
+        '<input class="search-box" id="wvSearch" placeholder="搜索设定卡：标题 / 内容 / 分类…">'+
+        '<div class="search-count" id="wvCount" hidden></div>'+
+        '<div id="wvList"></div>';
+      $('#cardNew').addEventListener('click', function(){ openCardEditor(null); });
+      $('#wvAsk').addEventListener('click', openWorldviewPrompt);
+      $('#wvImport').addEventListener('click', function(){ openImport('cards'); });
+      $('#wvSearch').addEventListener('input', function(e){ wvFilter=e.target.value; fillWvList(); });
+    }
+    fillWvList();
+  }
+  function fillWvList(){
+    var w=activeWorld(), box=$('#wvList'); if(!box) return;
+    var kw=wvFilter.trim().toLowerCase();
+    var list=(w.cards||[]).slice().sort(function(a,b){ return b.createdAt-a.createdAt; });
+    var matched = kw ? list.filter(function(c){
+      return (c.title||'').toLowerCase().indexOf(kw)>=0 ||
+             (c.content||'').toLowerCase().indexOf(kw)>=0 ||
+             (c.category||'').toLowerCase().indexOf(kw)>=0;
+    }) : list;
+    var html='';
+    if(!w.cards.length){
+      html='<div class="empty-hint">还没有设定卡。<br>点「+ 新建设定卡」，整页写下你为这个世界补充的民俗 / 都市传说 / 科幻设定。<br>'+
+        '（想查资料时，可点「委托补全」把梦境发给我，我联网检索后你把结果粘回来即可，纯手动也完全没问题。）</div>';
+    } else if(!matched.length){
+      html='<div class="empty-hint">没有匹配「'+esc(wvFilter.trim())+'」的设定卡。</div>';
+    } else {
+      matched.forEach(function(c){
+        var cat=c.category?('<span class="badge cat">'+esc(c.category)+'</span>'):'';
+        var firstFrag=(c.frags&&c.frags.length)?c.frags[0]:'';
+        var link=(c.frags&&c.frags.length)?('<span class="badge jump" data-frag="'+firstFrag+'">关联 '+c.frags.length+' 个碎片 ↗</span>'):'';
+        html+='<div class="card" data-cid="'+c.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
+          '<div class="card-title">'+esc(c.title||'（无标题）')+'</div>'+
+          '<div class="tag-row">'+cat+link+'</div>'+
+          (c.image?'<img class="card-img" src="'+c.image+'">':'')+
+          '<div class="card-sub" style="white-space:pre-wrap;margin-top:6px;">'+esc(c.content||'')+'</div></div>';
+      });
+    }
+    box.innerHTML=html;
+    var cnt=$('#wvCount');
+    if(cnt){ if(kw && w.cards.length){ cnt.hidden=false; cnt.textContent='匹配 '+matched.length+' / '+w.cards.length+' 张'; } else { cnt.hidden=true; } }
+    $all('#wvList .card').forEach(function(c){
+      c.addEventListener('click', function(e){
+        if(e.target.closest('[data-x]')){
+          var id=c.getAttribute('data-cid');
+          if(confirm('删除这张设定卡？')){ activeWorld().cards=activeWorld().cards.filter(function(x){return x.id!==id;}); saveState(); renderWorldview(); }
+          return;
+        }
+        if(e.target.closest('.badge.jump')){
+          var fid=e.target.closest('.badge.jump').getAttribute('data-frag');
+          if(fid && confirm('跳转到关联的梦境碎片？')) openFragEditor(fid);
+          return;
+        }
+        openCardEditor(c.getAttribute('data-cid'));
+      });
+    });
+  }
+  function getCard(id){ return activeWorld().cards.filter(function(c){return c.id===id;})[0]; }
+  function openCardEditor(id){
+    editingCardId=id; var c=id?getCard(id):null;
+    $('#cardTitle').value=c?c.title:'';
+    $('#cardCat').value=c?c.category:'民俗';
+    $('#cardContent').value=c?c.content:'';
+    $('#cardDelete').hidden=!id;
+    renderFragLinks('#cardFragLinks', c?c.frags:[]);
+    cardImgData=c?(c.image||''):'';
+    renderCardImgPrev();
+    setReadMode($('#cardOverlay'), !id);
+    $('#cardOverlay').hidden=false;
+    if(!id){ setTimeout(function(){ $('#cardTitle').focus(); },50); }
+  }
+  function saveCard(){
+    var w=activeWorld(), title=$('#cardTitle').value.trim(), content=$('#cardContent').value.trim();
+    if(!title && !content){ toast('写点什么再保存吧'); return; }
+    var frags=readFragLinks('#cardFragLinks');
+    if(editingCardId){ var c=getCard(editingCardId); c.title=title; c.content=content; c.category=$('#cardCat').value; c.frags=frags; c.image=cardImgData; }
+    else { w.cards.push({ id:uid(), title:title, content:content, category:$('#cardCat').value, frags:frags, image:cardImgData, createdAt:Date.now() }); }
+    saveState(); $('#cardOverlay').hidden=true; renderWorldview(); toast('设定卡已保存 ✦');
+  }
+  function deleteCard(){
+    if(!editingCardId) return; var c=getCard(editingCardId);
+    if(!confirm('删除设定卡「'+(c.title||'')+'」？')) return;
+    activeWorld().cards=activeWorld().cards.filter(function(x){return x.id!==editingCardId;});
+    saveState(); $('#cardOverlay').hidden=true; renderWorldview();
+  }
+
+  /* ---------- 要素库（整页手动） ---------- */
+  var ELEM_TYPES=[{key:'人物',ico:'feather'},{key:'地点',ico:'scroll'},{key:'规则',ico:'wand'},{key:'物件',ico:'potion'}];
+  function renderElements(){
+    var box=$('#elementsView');
+    if(!box.querySelector('#elList')){
+      box.innerHTML='<div class="section-bar"><span class="sec-title">要素库</span>'+
+        '<button class="sec-btn" id="elImport">粘贴导入</button>'+
+        '<button class="sec-btn gold" id="elNew">+ 新建要素</button></div>'+
+        '<input class="search-box" id="elSearch" placeholder="搜索要素：名称 / 类型 / 描述…">'+
+        '<div class="search-count" id="elCount" hidden></div>'+
+        '<div id="elList"></div>';
+      $('#elNew').addEventListener('click', function(){ openElemEditor(null); });
+      $('#elImport').addEventListener('click', function(){ openImport('elements'); });
+      $('#elSearch').addEventListener('input', function(e){ elFilter=e.target.value; fillElList(); });
+    }
+    fillElList();
+  }
+  function fillElList(){
+    var w=activeWorld(), box=$('#elList'); if(!box) return;
+    var kw=elFilter.trim().toLowerCase();
+    var html='';
+    if(!w.elements.length){
+      html='<div class="empty-hint">要素库还是空的。<br>写梦后，把出现的人物 / 地点 / 规则 / 物件逐个「+ 新建要素」记下来，并标上它来自哪条碎片。<br>日后积累成世界观，再扩写成书。</div>';
+    } else {
+      var any=false;
+      ELEM_TYPES.forEach(function(t){
+        var items=w.elements.filter(function(e){ return e.type===t.key; });
+        if(kw){ items=items.filter(function(e){
+          return (e.name||'').toLowerCase().indexOf(kw)>=0 ||
+                 (e.desc||'').toLowerCase().indexOf(kw)>=0 ||
+                 (e.type||'').toLowerCase().indexOf(kw)>=0 ||
+                 (e.source||'').toLowerCase().indexOf(kw)>=0;
+        }); }
+        if(!items.length) return;
+        any=true;
+        html+='<div class="elem-group"><h3><span class="g-ico">'+icon(t.ico)+'</span>'+esc(t.key)+' <span class="card-sub">('+items.length+')</span></h3>';
+        items.forEach(function(e){
+          var src=e.source==='搜索'?'<span class="badge search">搜索</span>':'<span class="badge dream">梦境</span>';
+          var firstFrag=(e.frags&&e.frags.length)?e.frags[0]:'';
+          var link=(e.frags&&e.frags.length)?('<span class="badge jump" data-frag="'+firstFrag+'">关联 '+e.frags.length+' 个碎片 ↗</span>'):'';
+          html+='<div class="card" data-eid="'+e.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
+            '<div class="card-title">'+esc(e.name)+'</div><div class="tag-row">'+src+link+'</div>'+
+            (e.image?'<img class="card-img" src="'+e.image+'">':'')+
+            (e.desc?'<div class="card-sub" style="margin-top:6px;white-space:pre-wrap;">'+esc(e.desc)+'</div>':'')+'</div>';
+        });
+        html+='</div>';
+      });
+      if(kw && !any){ html='<div class="empty-hint">没有匹配「'+esc(elFilter.trim())+'」的要素。</div>'; }
+    }
+    box.innerHTML=html;
+    var cnt=$('#elCount');
+    if(cnt){ if(kw && w.elements.length){ cnt.hidden=false; cnt.textContent='匹配 '+$all('#elList .card').length+' 条'; } else { cnt.hidden=true; } }
+    $all('#elList .card').forEach(function(c){
+      c.addEventListener('click', function(e){
+        if(e.target.closest('[data-x]')){
+          var id=c.getAttribute('data-eid');
+          if(confirm('删除这个要素？')){ activeWorld().elements=activeWorld().elements.filter(function(x){return x.id!==id;}); saveState(); renderElements(); }
+          return;
+        }
+        if(e.target.closest('.badge.jump')){
+          var fid=e.target.closest('.badge.jump').getAttribute('data-frag');
+          if(fid && confirm('跳转到关联的梦境碎片？')) openFragEditor(fid);
+          return;
+        }
+        openElemEditor(c.getAttribute('data-eid'));
+      });
+    });
+  }
+  function getElem(id){ return activeWorld().elements.filter(function(e){return e.id===id;})[0]; }
+  function openElemEditor(id){
+    editingElemId=id; var e=id?getElem(id):null;
+    $('#elemName').value=e?e.name:'';
+    $('#elemType').value=e?e.type:'人物';
+    $('#elemSource').value=e?e.source:'梦境';
+    $('#elemDesc').value=e?e.desc:'';
+    $('#elemDelete').hidden=!id;
+    renderFragLinks('#elemFragLinks', e?e.frags:[]);
+    elemImgData=e?(e.image||''):'';
+    renderElemImgPrev();
+    setReadMode($('#elemOverlay'), !id);
+    $('#elemOverlay').hidden=false;
+    if(!id){ setTimeout(function(){ $('#elemName').focus(); },50); }
+  }
+  function saveElem(){
+    var w=activeWorld(), name=$('#elemName').value.trim();
+    if(!name){ toast('给要素起个名字'); return; }
+    var frags=readFragLinks('#elemFragLinks');
+    if(editingElemId){ var e=getElem(editingElemId); e.name=name; e.type=$('#elemType').value; e.source=$('#elemSource').value; e.desc=$('#elemDesc').value; e.frags=frags; e.image=elemImgData; }
+    else { w.elements.push({ id:uid(), name:name, type:$('#elemType').value, source:$('#elemSource').value, desc:$('#elemDesc').value, frags:frags, image:elemImgData, createdAt:Date.now() }); }
+    saveState(); $('#elemOverlay').hidden=true; renderElements(); toast('要素已入库 ✦');
+  }
+  function deleteElem(){
+    if(!editingElemId) return; var e=getElem(editingElemId);
+    if(!confirm('删除要素「'+(e.name||'')+'」？')) return;
+    activeWorld().elements=activeWorld().elements.filter(function(x){return x.id!==editingElemId;});
+    saveState(); $('#elemOverlay').hidden=true; renderElements();
+  }
+
+  /* ---------- 灵感来源碎片（联动） ---------- */
+  function renderFragLinks(sel, selected){
+    var w=activeWorld(), box=$(sel); if(!box) return; box.innerHTML='';
+    if(!w.fragments.length){ box.innerHTML='<div class="link-item readonly">（还没有梦境碎片，先去记录）</div>'; return; }
+    var sel=selected||[];
+    w.fragments.forEach(function(f){
+      var id=f.id, on=sel.indexOf(id)>=0;
+      var lab=document.createElement('label'); lab.className='link-item';
+      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-fid="'+id+'"><span>'+esc(f.title||'（无标题）')+'</span>';
+      box.appendChild(lab);
+    });
+  }
+  function readFragLinks(sel){
+    var box=$(sel); if(!box) return [];
+    return $all(sel+' input[type=checkbox]:checked').map(function(i){ return i.getAttribute('data-fid'); });
+  }
+
+  /* ---------- 委托 / 导入（可选辅助） ---------- */
+  function openWorldviewPrompt(){
+    var w=activeWorld(), sel=$('#promptFragPick'); sel.hidden=false; sel.innerHTML='';
+    var o0=document.createElement('option'); o0.value=''; o0.textContent='（仅用世界设定，不针对具体碎片）'; sel.appendChild(o0);
+    w.fragments.forEach(function(f){ var o=document.createElement('option'); o.value=f.id; o.textContent=f.title||'（无标题）'; sel.appendChild(o); });
+    $('#promptTitle').textContent='委托 WorkBuddy 补全世界观';
+    refreshWorldviewPrompt(); $('#promptModal').hidden=false;
+  }
+  function refreshWorldviewPrompt(){
+    var w=activeWorld(), fid=$('#promptFragPick').value;
+    var frag=fid?w.fragments.filter(function(f){return f.id===fid;})[0]:null;
+    var txt='我正在写一部以《'+esc2(w.name)+'》为名的梦境小说（世界基调：'+(w.desc||'未设定')+'）。\n请帮我联网检索与下面内容相关的【民俗文化 / 都市传说 / 科幻设定】，并整理成若干「设定卡」。\n\n';
+    if(frag){ txt+='参考的梦境碎片：\n标题：'+(frag.title||'（无标题）')+'\n内容：\n'+frag.content+'\n\n'; }
+    txt+='每张设定卡请严格按以下格式输出：\n\n### 设定卡标题\n（2-5 句考据或设定说明）\n分类：民俗 / 都市传说 / 科幻  （三选一）\n\n（可输出多张，每张以 ### 开头）';
+    $('#promptText').value=txt;
+  }
+  function openPrompt(kind, txt){ $('#promptFragPick').hidden=true; $('#promptTitle').textContent=kind==='extract'?'整理并委托 WorkBuddy':'委托 WorkBuddy'; $('#promptText').value=txt; $('#promptModal').hidden=false; }
+  function openImport(type){
+    importType=type;
+    if(type==='cards'){ $('#importTitle').textContent='粘贴导入设定卡'; $('#importHint').textContent='把设定卡粘贴进来，每张以「### 标题」开头，「分类：民俗 / 都市传说 / 科幻」标注类型。'; }
+    else { $('#importTitle').textContent='粘贴导入要素'; $('#importHint').textContent='用「## 人物 / 地点 / 规则 / 物件」分节，每行为「- 名称：说明」。'; }
+    $('#importText').value=''; $('#importModal').hidden=false;
+  }
+  function doImportParse(){
+    var w=activeWorld(), text=$('#importText').value;
+    if(!text.trim()){ toast('先粘贴内容'); return; }
+    var n=0;
+    if(importType==='cards'){ parseCards(text).forEach(function(c){ w.cards.push({ id:uid(), title:c.title, content:c.content, category:c.category, frags:[], createdAt:Date.now() }); n++; }); }
+    else { parseElements(text).forEach(function(e){ w.elements.push({ id:uid(), name:e.name, type:e.type, source:'搜索', desc:e.desc, frags:[], createdAt:Date.now() }); n++; }); }
+    if(n===0){ toast('没解析到内容，检查下格式'); return; }
+    saveState(); $('#importModal').hidden=true;
+    if(importType==='cards') renderWorldview(); else renderElements();
+    toast('已导入 '+n+' 条 ✦');
+  }
+  function parseCards(text){
+    var lines=text.split(/\r?\n/), cards=[], cur=null;
+    lines.forEach(function(raw){ var line=raw.trim();
+      if(/^#{1,3}\s+/.test(line)){ if(cur) cards.push(cur); cur={ title:line.replace(/^#{1,3}\s+/,'').trim(), content:[], category:'' }; }
+      else if(cur){ var m=line.match(/^分类[：:]\s*(.+)$/); if(m){ cur.category=m[1].trim(); } else if(line) cur.content.push(line); }
+    });
+    if(cur) cards.push(cur);
+    if(!cards.length && text.trim()) cards.push({title:'导入的设定', content:[text.trim()], category:''});
+    return cards.map(function(c){ return { title:c.title, category:c.category, content:c.content.join('\n') }; });
+  }
+  function parseElements(text){
+    var lines=text.split(/\r?\n/), out=[], curType='';
+    lines.forEach(function(raw){ var line=raw.trim(); var h=line.match(/^#{1,2}\s*(.+)$/);
+      if(h){ curType=mapType(h[1]); return; } if(!curType) return;
+      var b=line.match(/^\s*[-*]\s*(.+)$/); if(!b) return;
+      var item=b[1].trim(), sp=item.search(/[：:]/), name, desc;
+      if(sp>=0){ name=item.slice(0,sp).trim(); desc=item.slice(sp+1).trim(); } else { name=item; desc=''; }
+      if(name) out.push({ type:curType, name:name, desc:desc });
+    });
+    return out;
+  }
+  function mapType(h){
+    if(/人物|角色|人/.test(h)) return '人物';
+    if(/地点|场景|地/.test(h)) return '地点';
+    if(/规则|魔法|世界观|体系|设定/.test(h)) return '规则';
+    if(/物件|道具|物/.test(h)) return '物件';
+    return '物件';
+  }
+
+  /* ---------- 导出 / 导入备份 ---------- */
+  function exportWorld(){
+    var w=activeWorld(); if(!w) return;
+    var data=JSON.stringify(w,null,2), blob=new Blob([data],{type:'application/json'}), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=(w.name||'world')+'.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href); toast('已导出《'+(w.name||'世界')+'》');
+  }
+  function importWorld(e){
+    var file=e.target.files[0]; if(!file) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var data=JSON.parse(r.result);
+        if(!data.worlds && !data.name) throw 0;
+        if(!confirm('用备份覆盖当前所有世界？此操作不可撤销。')) return;
+        if(data.worlds){ state=data; } else { state={ worlds:[data], activeWorldId:data.id||null }; }
+        saveState(); renderWorldList();
+        if(activeWorld()) selectWorld(state.activeWorldId,true); else showHome();
+        toast('备份已恢复');
+      }catch(err){ toast('备份文件格式不对'); }
+    };
+    r.readAsText(file); e.target.value='';
+  }
+
+  /* ---------- 云同步：码云 Gitee 私有仓库（国内直连 / 仅一个令牌 / 跨设备） ---------- */
+  var SYNC_FILE='dreamverse-data.json', SYNC_REPO='dreamverse-sync', syncTimer=null;
+  function syncCfg(){ try{ return JSON.parse(localStorage.getItem('dv_sync')||'null'); }catch(e){ return null; } }
+  function setSyncCfg(o){ localStorage.setItem('dv_sync', JSON.stringify(o)); }
+  function giteeApi(path, opts){
+    opts=opts||{};
+    opts.headers=Object.assign({ 'Content-Type':'application/json', 'Accept':'application/json' }, opts.headers||{});
+    return fetch('https://gitee.com/api/v5'+path, opts);
+  }
+  function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function b64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s/g,'')))); }
+  // 用令牌拿到登录名 → 同步目标由令牌推导（同一令牌必定落到同一仓库），从而天然跨设备
+  function giteeUser(token){
+    return giteeApi('/user?access_token='+encodeURIComponent(token)).then(function(r){
+      if(!r.ok) throw new Error('令牌无效或无权限（'+r.status+'）'); return r.json();
+    });
+  }
+  function ensureRepo(token, login){
+    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'?access_token='+encodeURIComponent(token)).then(function(r){
+      if(r.ok) return r.json();
+      if(r.status===404) return giteeApi('/user/repos?access_token='+encodeURIComponent(token), { method:'POST', body: JSON.stringify({ name:SYNC_REPO, private:true, auto_init:true, description:'梦境宇宙 云同步' }) })
+        .then(function(cr){ if(!cr.ok) throw new Error('创建仓库失败（需 repo 权限，'+cr.status+'）'); return cr.json(); });
+      throw new Error('检查仓库失败 '+r.status);
+    });
+  }
+  function loadGitee(token, login){
+    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE+'?access_token='+encodeURIComponent(token)).then(function(r){
+      if(r.status===404) return null;
+      if(!r.ok) throw new Error('读取云端失败 '+r.status);
+      return r.json().then(function(j){ return { sha:j.sha, data: JSON.parse(b64dec(j.content)) }; });
+    }).catch(function(e){ if(/404/.test(e.message||'')) return null; throw e; });
+  }
+  function saveGitee(token, login, st, sha){
+    var body={ content: b64enc(JSON.stringify(st)), message:'梦境宇宙 同步 '+new Date().toLocaleString() };
+    if(sha) body.sha=sha;
+    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE+'?access_token='+encodeURIComponent(token), { method:'PUT', body: JSON.stringify(body) })
+      .then(function(r){ if(!r.ok) throw new Error('写入云端失败 '+r.status); return r.json(); });
+  }
+
+  function mergeWorlds(base, inc){
+    var m={ worlds:[], activeWorldId: base.activeWorldId || inc.activeWorldId };
+    var bIds={};
+    base.worlds.forEach(function(w){ bIds[w.id]=1; m.worlds.push(JSON.parse(JSON.stringify(w))); });
+    inc.worlds.forEach(function(w){ if(!bIds[w.id]) m.worlds.push(JSON.parse(JSON.stringify(w))); });
+    base.worlds.forEach(function(bw){
+      var iw=null; inc.worlds.forEach(function(w){ if(w.id===bw.id) iw=w; }); if(!iw) return;
+      var tgt=null; m.worlds.forEach(function(w){ if(w.id===bw.id) tgt=w; });
+      ['fragments','cards','elements'].forEach(function(k){
+        var bm={}, out=[];
+        (bw[k]||[]).forEach(function(it){ bm[it.id]=1; out.push(JSON.parse(JSON.stringify(it))); });
+        (iw[k]||[]).forEach(function(it){ if(!bm[it.id]) out.push(JSON.parse(JSON.stringify(it))); });
+        tgt[k]=out;
+      });
+    });
+    return m;
+  }
+  function scheduleSync(){
+    var c=syncCfg(); if(!c||!c.token||!c.auto) return;
+    clearTimeout(syncTimer); syncTimer=setTimeout(function(){ syncNow(true); }, 4000);
+  }
+  function syncNow(silent){
+    var c=syncCfg(); if(!c||!c.token){ if(!silent) openSync(); return Promise.resolve(); }
+    if(!silent) $('#syncStatus').textContent='同步中…';
+    function fail(msg){ if(!silent) $('#syncStatus').textContent='同步失败：'+msg; }
+    var login, sha=null;
+    function applyRemote(remote){
+      if(remote && remote.data && remote.data.worlds){ state=mergeWorlds(state, remote.data); saveState(); renderWorldList(); if(activeWorld()) selectWorld(state.activeWorldId); else showHome(); }
+      if(remote) sha=remote.sha;
+    }
+    return Promise.resolve()
+      .then(function(){ return giteeUser(c.token); })
+      .then(function(u){ login=u.login; return ensureRepo(c.token, login); })
+      .then(function(){ return loadGitee(c.token, login); })
+      .then(function(remote){ applyRemote(remote); return saveGitee(c.token, login, state, sha); })
+      .then(function(){ c.lastSync=Date.now(); setSyncCfg(c); if(!silent){ $('#syncStatus').textContent='已同步 · '+new Date().toLocaleString(); } toast('已同步到码云'); })
+      .catch(function(e){ fail(e && e.message); });
+  }
+  function safeParse(s){ try{ return JSON.parse(s); }catch(e){ return null; } }
+  function openSync(){
+    var c=syncCfg()||{};
+    $('#syncToken').value=c.token||'';
+    $('#syncAuto').checked=!!(c&&c.auto);
+    $('#syncStatus').textContent = (c&&c.lastSync) ? ('上次同步：'+new Date(c.lastSync).toLocaleString()) : (c&&c.token ? ('已连接（'+(c.login||'码云')+'）· 点「立即同步」') : '尚未配置令牌');
+    $('#syncOverlay').hidden=false;
+  }
+
+  /* ---------- 启动 ---------- */
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
+
+<!-- 云同步：码云 Gitee 私有仓库（国内直连 / 跨设备） -->
+<div id="syncOverlay" class="overlay" hidden>
+  <div class="sheet modal-sheet">
+    <div class="sheet-head">
+      <span class="modal-title">☁ 云同步</span>
+      <button class="icon-btn close-x" data-close="syncOverlay" aria-label="关闭">✕</button>
+    </div>
+    <div class="sheet-body">
+      <p class="modal-hint">把全部世界存到你的<strong>码云 Gitee 私有仓库</strong>，手机 / 电脑登录同一令牌即自动同步。国内直连、无需翻墙，只需一个令牌。</p>
+      <label class="field-label">码云私人令牌</label>
+      <input id="syncToken" class="line-input full" type="password" placeholder="码云私人令牌" autocomplete="off">
+      <p id="syncHint" class="modal-hint" style="margin-top:10px">在码云生成令牌：<strong>设置 → 私人令牌 → 生成新令牌</strong>，勾选 <code>repo</code>（仓库权限），复制粘贴。应用会自动在你的账号下建一个私有仓库 <code>dreamverse-sync</code> 来存放数据，仅你本人可读。</p>
+      <label class="field-label" style="display:flex;align-items:center;gap:8px;margin-top:12px">
+        <input id="syncAuto" type="checkbox"> 自动同步（每次保存后）
+      </label>
+      <div id="syncStatus" class="search-count" style="margin-top:12px"></div>
+    </div>
+    <div class="sheet-foot">
+      <button id="syncClear" class="danger-btn">清除令牌</button>
+      <span class="spacer"></span>
+      <button id="syncSaveToken" class="ghost-btn">保存令牌</button>
+      <button id="syncNow" class="gold-btn">立即同步</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
