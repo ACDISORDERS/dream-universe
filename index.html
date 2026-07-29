@@ -117,6 +117,9 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
 .sec-btn{padding:7px 13px;border-radius:10px;font-size:13.5px;border:1px solid var(--line-strong);background:var(--card);transition:.15s;}
 .sec-btn:hover{filter:brightness(1.04);}
 .sec-btn.gold{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 22%, transparent);}
+.mode-switch{display:flex;gap:8px;padding:0 16px 10px;}
+.mode-switch button{flex:1;padding:8px 10px;border-radius:10px;font-size:13.5px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink-soft);transition:.15s;}
+.mode-switch button.active{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 20%, transparent);font-weight:600;}
 
 /* ===== 卡片 ===== */
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:12px;box-shadow:var(--shadow-sm);transition:.15s;position:relative;backdrop-filter:blur(4px);}
@@ -260,7 +263,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-6</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-1</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -402,11 +405,15 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
 <div id="promptModal" class="overlay" hidden>
   <div class="sheet modal-sheet">
     <div class="sheet-head">
-      <span class="modal-title" id="promptTitle">委托 WorkBuddy</span>
+      <span class="modal-title" id="promptTitle">整理并委托 WorkBuddy</span>
       <button class="icon-btn close-x" data-close="promptModal" aria-label="关闭">✕</button>
     </div>
-    <select id="promptFragPick" class="line-input full" hidden></select>
-    <p class="modal-hint">下面这段已经帮你写好，复制后直接发到聊天里给我（可选）。我来联网检索民俗 / 都市传说 / 科幻设定，并把结果整理成设定卡发回你。纯手动录入也完全没问题。</p>
+    <div id="promptModeSwitch" class="mode-switch">
+      <button data-mode="extract" class="active">提取要素库</button>
+      <button data-mode="worldview">补全世界观</button>
+    </div>
+    <select id="promptFragPick" class="line-input full"></select>
+    <p id="promptHint" class="modal-hint"></p>
     <textarea id="promptText" class="big-text" readonly></textarea>
     <div class="sheet-foot">
       <span class="spacer"></span>
@@ -513,7 +520,8 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   var worldModalId=null, worldModalIcon='scroll', worldModalColor='#c9a06a';
   var wvFilter='', elFilter='';
   var cardImgData='', elemImgData='';
-  var importType=null;
+  var importType=null, importTargetFragId=null;
+  var promptMode='extract', promptTargetFragId=null;
 
   function uid(){ return (crypto.randomUUID && crypto.randomUUID()) || ('w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)); }
   function $(s){ return document.querySelector(s); }
@@ -689,8 +697,11 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     $('#elemImgDel').addEventListener('click', function(){ elemImgData=''; renderElemImgPrev(); $('#elemImg').value=''; });
     // prompt / import / world
     $('#promptCopy').addEventListener('click', function(){ copyText($('#promptText').value); toast('已复制，去聊天里发给我吧 ✦'); });
-    $('#promptFragPick').addEventListener('change', refreshWorldviewPrompt);
-    $('#promptFragPick').addEventListener('input', refreshWorldviewPrompt);
+    $('#promptFragPick').addEventListener('change', refreshPromptText);
+    $('#promptFragPick').addEventListener('input', refreshPromptText);
+    $all('#promptModeSwitch button').forEach(function(b){
+      b.addEventListener('click', function(){ openPromptModal(b.getAttribute('data-mode'), $('#promptFragPick').value); });
+    });
     $('#importParse').addEventListener('click', doImportParse);
     $('#worldSave').addEventListener('click', saveWorld);
     $('#worldDelete').addEventListener('click', deleteWorld);
@@ -899,11 +910,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   }
   function fragExtract(){
     var f=getFrag(editingFragId); if(!f){ toast('先保存这条碎片再委托'); return; }
-    var w=activeWorld();
-    var txt='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有某类就省略该标题）：\n\n'+
-      '## 人物\n- 名称：一句话设定\n## 地点\n- 名称：一句话设定\n## 规则（魔法 / 世界观）\n- 名称：一句话设定\n## 物件\n- 名称：一句话设定\n\n'+
-      '【世界背景】'+esc2(w.name)+'：'+(w.desc||'（未设定）')+'\n【梦境碎片】\n标题：'+(f.title||'（无标题）')+'\n内容：\n'+f.content+'\n';
-    openPrompt('extract', txt);
+    openPromptModal('extract', editingFragId);
   }
 
   /* ---------- 世界观完善（设定卡，整页手动） ---------- */
@@ -912,13 +919,11 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     if(!box.querySelector('#wvList')){
       box.innerHTML='<div class="section-bar"><span class="sec-title">世界观完善</span>'+
         '<button class="sec-btn" id="wvImport">粘贴导入</button>'+
-        '<button class="sec-btn" id="wvAsk">委托补全</button>'+
         '<button class="sec-btn gold" id="cardNew">+ 新建设定卡</button></div>'+
         '<input class="search-box" id="wvSearch" placeholder="搜索设定卡：标题 / 内容 / 分类…">'+
         '<div class="search-count" id="wvCount" hidden></div>'+
         '<div id="wvList"></div>';
       $('#cardNew').addEventListener('click', function(){ openCardEditor(null); });
-      $('#wvAsk').addEventListener('click', openWorldviewPrompt);
       $('#wvImport').addEventListener('click', function(){ openImport('cards'); });
       $('#wvSearch').addEventListener('input', function(e){ wvFilter=e.target.value; fillWvList(); });
     }
@@ -936,7 +941,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     var html='';
     if(!w.cards.length){
       html='<div class="empty-hint">还没有设定卡。<br>点「+ 新建设定卡」，整页写下你为这个世界补充的民俗 / 都市传说 / 科幻设定。<br>'+
-        '（想查资料时，可点「委托补全」把梦境发给我，我联网检索后你把结果粘回来即可，纯手动也完全没问题。）</div>';
+        '（也可以去梦境碎片里点「整理并委托 WorkBuddy → 补全世界观」，联网检索后把结果粘回来。）</div>';
     } else if(!matched.length){
       html='<div class="empty-hint">没有匹配「'+esc(wvFilter.trim())+'」的设定卡。</div>';
     } else {
@@ -1115,38 +1120,81 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   }
 
   /* ---------- 委托 / 导入（可选辅助） ---------- */
-  function openWorldviewPrompt(){
-    var w=activeWorld(), sel=$('#promptFragPick'); sel.hidden=false; sel.innerHTML='';
-    var o0=document.createElement('option'); o0.value=''; o0.textContent='（仅用世界设定，不针对具体碎片）'; sel.appendChild(o0);
+  function openPromptModal(mode, defaultFragId){
+    promptMode = mode;
+    var w=activeWorld(), sel=$('#promptFragPick'); sel.innerHTML='';
+    if(mode==='worldview'){
+      var o0=document.createElement('option'); o0.value=''; o0.textContent='（仅用世界设定，不针对具体碎片）'; sel.appendChild(o0);
+    }
     w.fragments.forEach(function(f){ var o=document.createElement('option'); o.value=f.id; o.textContent=f.title||'（无标题）'; sel.appendChild(o); });
-    $('#promptTitle').textContent='委托 WorkBuddy 补全世界观';
-    refreshWorldviewPrompt(); $('#promptModal').hidden=false;
+    // 默认选中
+    var pick = defaultFragId || (mode==='extract' ? (w.fragments[0]&&w.fragments[0].id) : '');
+    sel.value = pick || '';
+    promptTargetFragId = sel.value || null;
+    importTargetFragId = (mode==='extract' && sel.value) ? sel.value : null;
+    // 高亮模式按钮
+    $all('#promptModeSwitch button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===mode); });
+    refreshPromptText(); $('#promptModal').hidden=false;
   }
-  function refreshWorldviewPrompt(){
+  function refreshPromptText(){
     var w=activeWorld(), fid=$('#promptFragPick').value;
+    promptTargetFragId = fid || null;
+    if(promptMode==='extract') importTargetFragId = fid || null;
     var frag=fid?w.fragments.filter(function(f){return f.id===fid;})[0]:null;
-    var txt='我正在写一部以《'+esc2(w.name)+'》为名的梦境小说（世界基调：'+(w.desc||'未设定')+'）。\n请帮我联网检索与下面内容相关的【民俗文化 / 都市传说 / 科幻设定】，并整理成若干「设定卡」。\n\n';
-    if(frag){ txt+='参考的梦境碎片：\n标题：'+(frag.title||'（无标题）')+'\n内容：\n'+frag.content+'\n\n'; }
-    txt+='每张设定卡请严格按以下格式输出：\n\n### 设定卡标题\n（2-5 句考据或设定说明）\n分类：民俗 / 都市传说 / 科幻  （三选一）\n\n（可输出多张，每张以 ### 开头）';
+    var txt='', hint='';
+    if(promptMode==='worldview'){
+      hint='我来联网检索民俗 / 都市传说 / 科幻设定，并把结果整理成设定卡发回你。纯手动录入也完全没问题。';
+      txt='我正在写一部以《'+esc2(w.name)+'》为名的梦境小说（世界基调：'+(w.desc||'未设定')+'）。\n请帮我联网检索与下面内容相关的【民俗文化 / 都市传说 / 科幻设定】，并整理成若干「设定卡」。\n\n';
+      if(frag){ txt+='参考的梦境碎片：\n标题：'+(frag.title||'（无标题）')+'\n内容：\n'+frag.content+'\n\n'; }
+      txt+='每张设定卡请严格按以下格式输出：\n\n### 设定卡标题\n（2-5 句考据或设定说明）\n分类：民俗 / 都市传说 / 科幻  （三选一）\n\n（可输出多张，每张以 ### 开头）';
+    } else {
+      hint='我来把选定碎片整理成人物 / 地点 / 规则 / 物件，方便你录入要素库。';
+      txt='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有某类就省略该标题）：\n\n'+
+        '## 人物\n- 名称：一句话设定\n## 地点\n- 名称：一句话设定\n## 规则（魔法 / 世界观）\n- 名称：一句话设定\n## 物件\n- 名称：一句话设定\n\n'+
+        '【世界背景】'+esc2(w.name)+'：'+(w.desc||'（未设定）')+'\n【梦境碎片】\n标题：'+((frag&&frag.title)||'（无标题）')+'\n内容：\n'+((frag&&frag.content)||'')+'\n';
+    }
+    $('#promptHint').textContent=hint;
     $('#promptText').value=txt;
   }
-  function openPrompt(kind, txt){ $('#promptFragPick').hidden=true; $('#promptTitle').textContent=kind==='extract'?'整理并委托 WorkBuddy':'委托 WorkBuddy'; $('#promptText').value=txt; $('#promptModal').hidden=false; }
   function openImport(type){
     importType=type;
     if(type==='cards'){ $('#importTitle').textContent='粘贴导入设定卡'; $('#importHint').textContent='把设定卡粘贴进来，每张以「### 标题」开头，「分类：民俗 / 都市传说 / 科幻」标注类型。'; }
-    else { $('#importTitle').textContent='粘贴导入要素'; $('#importHint').textContent='用「## 人物 / 地点 / 规则 / 物件」分节，每行为「- 名称：说明」。'; }
+    else {
+      $('#importTitle').textContent='粘贴导入要素';
+      var hint='用「## 人物 / 地点 / 规则 / 物件」分节，每行为「- 名称：说明」。';
+      if(importTargetFragId){
+        var f=activeWorld().fragments.filter(function(x){return x.id===importTargetFragId;})[0];
+        if(f) hint+='（将自动关联到梦境碎片《'+(f.title||'无标题')+'》，导入后可在要素编辑中手动修改）';
+      }
+      $('#importHint').textContent=hint;
+    }
     $('#importText').value=''; $('#importModal').hidden=false;
   }
   function doImportParse(){
     var w=activeWorld(), text=$('#importText').value;
     if(!text.trim()){ toast('先粘贴内容'); return; }
     var n=0;
-    if(importType==='cards'){ parseCards(text).forEach(function(c){ w.cards.push({ id:uid(), title:c.title, content:c.content, category:c.category, frags:[], createdAt:Date.now() }); n++; }); }
-    else { parseElements(text).forEach(function(e){ w.elements.push({ id:uid(), name:e.name, type:e.type, source:'搜索', desc:e.desc, frags:[], createdAt:Date.now() }); n++; }); }
+    if(importType==='cards'){
+      parseCards(text).forEach(function(c){ w.cards.push({ id:uid(), title:c.title, content:c.content, category:c.category, frags:[], createdAt:Date.now() }); n++; });
+    } else {
+      var targetFrag = importTargetFragId;
+      parseElements(text).forEach(function(e){
+        var frags = [];
+        if(targetFrag){ frags.push(targetFrag); }
+        w.elements.push({ id:uid(), name:e.name, type:e.type, source:'搜索', desc:e.desc, frags:frags, createdAt:Date.now() });
+        n++;
+      });
+    }
     if(n===0){ toast('没解析到内容，检查下格式'); return; }
+    var targetName = '';
+    if(importType==='elements' && importTargetFragId){
+      var tf = w.fragments.filter(function(f){ return f.id===importTargetFragId; })[0];
+      if(tf) targetName='《'+(tf.title||'无标题')+'》';
+    }
+    importTargetFragId=null;
     saveState(); $('#importModal').hidden=true;
     if(importType==='cards') renderWorldview(); else renderElements();
-    toast('已导入 '+n+' 条 ✦');
+    toast('已导入 '+n+' 条'+(targetName?'，已自动关联到碎片 '+targetName+' ✦':' ✦'));
   }
   function parseCards(text){
     var lines=text.split(/\r?\n/), cards=[], cur=null;
