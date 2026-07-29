@@ -172,6 +172,8 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
 .close-x{border:1px solid var(--line);background:transparent;color:var(--ink-soft);}
 .close-x:hover{background:var(--card);color:var(--ink);}
 .sheet-meta{display:flex;gap:10px;padding:6px 16px 4px;flex-wrap:wrap;}
+.sheet-meta.col{display:block;}
+.meta-label{font-size:13px;color:var(--ink-soft);margin:8px 16px 2px;}
 .line-input{flex:1;min-width:140px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card-2);font-size:14px;color:var(--ink);}
 .line-input:focus{outline:none;border-color:var(--gold);}
 select option, select optgroup{background:var(--card-2);color:var(--ink);}
@@ -271,7 +273,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-5</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-6</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -338,21 +340,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
       <input id="cardTitle" class="big-input" placeholder="设定卡标题…">
       <button class="icon-btn close-x" data-close="cardOverlay" aria-label="关闭">✕</button>
     </div>
-    <div class="sheet-meta">
-      <select id="cardCat" class="line-input">
-        <option value="民俗">民俗</option>
-        <option value="都市传说">都市传说</option>
-        <option value="新闻案件">新闻案件</option>
-        <option value="历史原型">历史原型</option>
-        <option value="神话原型">神话原型</option>
-        <option value="心理学">心理学</option>
-        <option value="建筑/空间">建筑/空间</option>
-        <option value="司法/制度">司法/制度</option>
-        <option value="妖怪图鉴">妖怪图鉴</option>
-        <option value="符号意象">符号意象</option>
-        <option value="影视文学参考">影视文学参考</option>
-        <option value="其他">其他</option>
-      </select>
+    <div class="sheet-meta col">
+      <div class="meta-label">分类标签（可多选，至少选一个）</div>
+      <div id="cardCats" class="cat-list"></div>
     </div>
     <textarea id="cardContent" class="big-text" placeholder="把这条设定写下来——它的来历、规矩、在梦里如何显现……整页书写，随时可滚回开头。"></textarea>
     <label class="field-label">配图（人物外貌 / 世界地图等，可选）</label>
@@ -874,6 +864,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     }
     var cbs=ov.querySelectorAll('.link-list input[type=checkbox]');
     for(var j=0;j<cbs.length;j++){ cbs[j].disabled=!editing; }
+    var ccbs=ov.querySelectorAll('#cardCats input[type=checkbox]');
+    for(var k2=0;k2<ccbs.length;k2++){ ccbs[k2].disabled=!editing; }
   }
   function renderCardImgPrev(){
     var prev=$('#cardImgPrev');
@@ -948,9 +940,10 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     var kw=wvFilter.trim().toLowerCase();
     var list=(w.cards||[]).slice().sort(function(a,b){ return b.createdAt-a.createdAt; });
     var matched = kw ? list.filter(function(c){
+      var catStr = Array.isArray(c.category)? c.category.join(' ') : (c.category||'');
       return (c.title||'').toLowerCase().indexOf(kw)>=0 ||
              (c.content||'').toLowerCase().indexOf(kw)>=0 ||
-             (c.category||'').toLowerCase().indexOf(kw)>=0;
+             (catStr||'').toLowerCase().indexOf(kw)>=0;
     }) : list;
     var html='';
     if(!w.cards.length){
@@ -960,7 +953,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
       html='<div class="empty-hint">没有匹配「'+esc(wvFilter.trim())+'」的设定卡。</div>';
     } else {
       matched.forEach(function(c){
-        var cat=c.category?('<span class="badge cat">'+esc(c.category)+'</span>'):'';
+        var catArr=Array.isArray(c.category)?c.category:(c.category?[c.category]:[]);
+        var cat=catArr.length?catArr.map(function(k){return '<span class="badge cat">'+esc(k)+'</span>';}).join(''):'';
         var firstFrag=(c.frags&&c.frags.length)?c.frags[0]:'';
         var link=(c.frags&&c.frags.length)?('<span class="badge jump" data-frag="'+firstFrag+'">关联 '+c.frags.length+' 个碎片 ↗</span>'):'';
         html+='<div class="card" data-cid="'+c.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
@@ -993,7 +987,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   function openCardEditor(id){
     editingCardId=id; var c=id?getCard(id):null;
     $('#cardTitle').value=c?c.title:'';
-    $('#cardCat').value=c?c.category:'民俗';
+    renderCardCats(c?c.category:['民俗']);
     $('#cardContent').value=c?c.content:'';
     $('#cardDelete').hidden=!id;
     renderFragLinks('#cardFragLinks', c?c.frags:[]);
@@ -1007,8 +1001,10 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     var w=activeWorld(), title=$('#cardTitle').value.trim(), content=$('#cardContent').value.trim();
     if(!title && !content){ toast('写点什么再保存吧'); return; }
     var frags=readFragLinks('#cardFragLinks');
-    if(editingCardId){ var c=getCard(editingCardId); c.title=title; c.content=content; c.category=$('#cardCat').value; c.frags=frags; c.image=cardImgData; }
-    else { w.cards.push({ id:uid(), title:title, content:content, category:$('#cardCat').value, frags:frags, image:cardImgData, createdAt:Date.now() }); }
+    var cats=$all('#cardCats input:checked').map(function(i){ return i.getAttribute('data-cat'); });
+    if(!cats.length){ cats=['其他']; }
+    if(editingCardId){ var c=getCard(editingCardId); c.title=title; c.content=content; c.category=cats; c.frags=frags; c.image=cardImgData; }
+    else { w.cards.push({ id:uid(), title:title, content:content, category:cats, frags:frags, image:cardImgData, createdAt:Date.now() }); }
     saveState(); $('#cardOverlay').hidden=true; renderWorldview(); toast('设定卡已保存 ✦');
   }
   function deleteCard(){
@@ -1161,6 +1157,21 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
       box.appendChild(lab);
     });
   }
+  function renderCardCats(selected){
+    var box=$('#cardCats'); if(!box) return; box.innerHTML='';
+    if(typeof selected==='string') selected=selected.split(/[\/、，,]/).map(function(s){return s.trim();}).filter(Boolean);
+    selected=selected||[];
+    var cats=WV_CATS.map(function(c){ return c.k; });
+    // 保留已存在但不在预设里的自定义分类
+    selected.forEach(function(s){ if(cats.indexOf(s)<0) cats.push(s); });
+    cats.push('其他');
+    cats.forEach(function(k){
+      var on=selected.indexOf(k)>=0;
+      var lab=document.createElement('label'); lab.className='cat-chip';
+      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-cat="'+esc(k)+'"><span>'+esc(k)+'</span>';
+      box.appendChild(lab);
+    });
+  }
   function refreshPromptText(){
     var w=activeWorld(), fid=$('#promptFragPick').value;
     promptTargetFragId = fid || null;
@@ -1176,7 +1187,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
       if(frag){ txt+='参考的梦境碎片：\n标题：'+(frag.title||'（无标题）')+'\n内容：\n'+frag.content+'\n\n'; }
       txt+='每张设定卡请严格按以下格式输出：\n\n'+
         '### 设定卡标题\n'+
-        '分类：从【'+catStr+'】中选一个最贴合的\n'+
+        '分类：从【'+catStr+'】中选一个或多个最贴合的（多个用「/」分隔）\n'+
         '（考据/原型：它源自哪条真实事件、传说或文化，注明来源与背景）\n'+
         '（关键细节：具体的器物、动作、空间、规则或仪式，越具体越好，能直接当描写素材）\n'+
         '（情绪内核：它为什么吓人、戳中什么心理）\n'+
@@ -1234,11 +1245,11 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   function parseCards(text){
     var lines=text.split(/\r?\n/), cards=[], cur=null;
     lines.forEach(function(raw){ var line=raw.trim();
-      if(/^#{1,3}\s+/.test(line)){ if(cur) cards.push(cur); cur={ title:line.replace(/^#{1,3}\s+/,'').trim(), content:[], category:'' }; }
-      else if(cur){ var m=line.match(/^分类[：:]\s*(.+)$/); if(m){ cur.category=m[1].trim(); } else if(line) cur.content.push(line); }
+      if(/^#{1,3}\s+/.test(line)){ if(cur) cards.push(cur); cur={ title:line.replace(/^#{1,3}\s+/,'').trim(), content:[], category:[] }; }
+      else if(cur){ var m=line.match(/^分类[：:]\s*(.+)$/); if(m){ cur.category=m[1].trim().split(/[\/、，,]/).map(function(s){return s.trim();}).filter(function(s){return s;}); } else if(line) cur.content.push(line); }
     });
     if(cur) cards.push(cur);
-    if(!cards.length && text.trim()) cards.push({title:'导入的设定', content:[text.trim()], category:''});
+    if(!cards.length && text.trim()) cards.push({title:'导入的设定', content:[text.trim()], category:[]});
     return cards.map(function(c){ return { title:c.title, category:c.category, content:c.content.join('\n') }; });
   }
   function parseElements(text){
