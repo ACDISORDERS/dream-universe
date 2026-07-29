@@ -120,6 +120,10 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
 .mode-switch{display:flex;gap:8px;padding:0 16px 10px;}
 .mode-switch button{flex:1;padding:8px 10px;border-radius:10px;font-size:13.5px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink-soft);transition:.15s;}
 .mode-switch button.active{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 20%, transparent);font-weight:600;}
+.cat-list{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 6px;}
+.cat-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:13px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink-soft);cursor:pointer;transition:.15s;}
+.cat-chip:has(input:checked){border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 18%, transparent);}
+.cat-chip input{accent-color:var(--gold);margin:0;}
 
 /* ===== 卡片 ===== */
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:12px;box-shadow:var(--shadow-sm);transition:.15s;position:relative;backdrop-filter:blur(4px);}
@@ -263,7 +267,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-1</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-2</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -413,6 +417,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       <button data-mode="worldview">补全世界观</button>
     </div>
     <select id="promptFragPick" class="line-input full"></select>
+    <div id="promptCats" class="cat-list" hidden></div>
     <p id="promptHint" class="modal-hint"></p>
     <textarea id="promptText" class="big-text" readonly></textarea>
     <div class="sheet-foot">
@@ -522,6 +527,8 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   var cardImgData='', elemImgData='';
   var importType=null, importTargetFragId=null;
   var promptMode='extract', promptTargetFragId=null;
+  var WV_CATS=[{k:'民俗',d:true},{k:'都市传说',d:true},{k:'新闻案件',d:true},{k:'历史原型',d:true},{k:'神话原型',d:true},{k:'心理学',d:true},{k:'建筑/空间',d:false},{k:'司法/制度',d:false},{k:'妖怪图鉴',d:false},{k:'符号意象',d:false},{k:'影视文学参考',d:false}];
+  var wvCatSel={}; WV_CATS.forEach(function(c){ wvCatSel[c.k]=c.d; });
 
   function uid(){ return (crypto.randomUUID && crypto.randomUUID()) || ('w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)); }
   function $(s){ return document.querySelector(s); }
@@ -699,6 +706,10 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     $('#promptCopy').addEventListener('click', function(){ copyText($('#promptText').value); toast('已复制，去聊天里发给我吧 ✦'); });
     $('#promptFragPick').addEventListener('change', refreshPromptText);
     $('#promptFragPick').addEventListener('input', refreshPromptText);
+    $('#promptCats').addEventListener('change', function(e){
+      var cat=e.target && e.target.getAttribute('data-cat');
+      if(cat){ wvCatSel[cat]=e.target.checked; refreshPromptText(); }
+    });
     $all('#promptModeSwitch button').forEach(function(b){
       b.addEventListener('click', function(){ openPromptModal(b.getAttribute('data-mode'), $('#promptFragPick').value); });
     });
@@ -1134,7 +1145,18 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     importTargetFragId = (mode==='extract' && sel.value) ? sel.value : null;
     // 高亮模式按钮
     $all('#promptModeSwitch button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===mode); });
+    $('#promptCats').hidden = (mode!=='worldview');
+    if(mode==='worldview') renderPromptCats();
     refreshPromptText(); $('#promptModal').hidden=false;
+  }
+  function renderPromptCats(){
+    var box=$('#promptCats'); if(!box) return; box.innerHTML='';
+    WV_CATS.forEach(function(c){
+      var on=!!wvCatSel[c.k];
+      var lab=document.createElement('label'); lab.className='cat-chip';
+      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-cat="'+c.k+'"><span>'+c.k+'</span>';
+      box.appendChild(lab);
+    });
   }
   function refreshPromptText(){
     var w=activeWorld(), fid=$('#promptFragPick').value;
@@ -1143,10 +1165,20 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     var frag=fid?w.fragments.filter(function(f){return f.id===fid;})[0]:null;
     var txt='', hint='';
     if(promptMode==='worldview'){
-      hint='我来联网检索民俗 / 都市传说 / 科幻设定，并把结果整理成设定卡发回你。纯手动录入也完全没问题。';
-      txt='我正在写一部以《'+esc2(w.name)+'》为名的梦境小说（世界基调：'+(w.desc||'未设定')+'）。\n请帮我联网检索与下面内容相关的【民俗文化 / 都市传说 / 科幻设定】，并整理成若干「设定卡」。\n\n';
+      var cats=WV_CATS.filter(function(c){ return wvCatSel[c.k]; }).map(function(c){ return c.k; });
+      if(!cats.length) cats=WV_CATS.filter(function(c){ return c.d; }).map(function(c){ return c.k; });
+      var catStr=cats.join(' / ');
+      hint='勾选要检索的分类（默认前 6 项），我来联网检索并整理成设定卡。纯手动录入也完全没问题。';
+      txt='我正在写一部以《'+esc2(w.name)+'》为名的梦境小说（世界基调：'+(w.desc||'未设定')+'）。\n请帮我联网检索与下面内容相关的【'+catStr+'】资料，并整理成若干「设定卡」。每张卡尽量详细、有可落笔的细节。\n\n';
       if(frag){ txt+='参考的梦境碎片：\n标题：'+(frag.title||'（无标题）')+'\n内容：\n'+frag.content+'\n\n'; }
-      txt+='每张设定卡请严格按以下格式输出：\n\n### 设定卡标题\n（2-5 句考据或设定说明）\n分类：民俗 / 都市传说 / 科幻  （三选一）\n\n（可输出多张，每张以 ### 开头）';
+      txt+='每张设定卡请严格按以下格式输出：\n\n'+
+        '### 设定卡标题\n'+
+        '分类：从【'+catStr+'】中选一个最贴合的\n'+
+        '（考据/原型：它源自哪条真实事件、传说或文化，注明来源与背景）\n'+
+        '（关键细节：具体的器物、动作、空间、规则或仪式，越具体越好，能直接当描写素材）\n'+
+        '（情绪内核：它为什么吓人、戳中什么心理）\n'+
+        '（写作钩子：可以怎样嫁接到我的故事里）\n\n'+
+        '（可输出多张，每张以 ### 开头，务必保留「分类：」这一行）';
     } else {
       hint='我来把选定碎片整理成人物 / 地点 / 规则 / 物件，方便你录入要素库。';
       txt='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有某类就省略该标题）：\n\n'+
@@ -1158,7 +1190,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   }
   function openImport(type){
     importType=type;
-    if(type==='cards'){ $('#importTitle').textContent='粘贴导入设定卡'; $('#importHint').textContent='把设定卡粘贴进来，每张以「### 标题」开头，「分类：民俗 / 都市传说 / 科幻」标注类型。'; }
+    if(type==='cards'){ $('#importTitle').textContent='粘贴导入设定卡'; $('#importHint').textContent='把设定卡粘贴进来，每张以「### 标题」开头，并用「分类：民俗 / 都市传说 / 新闻案件 / 历史原型 / 神话原型 / 心理学 …」标注类型。'; }
     else {
       $('#importTitle').textContent='粘贴导入要素';
       var hint='用「## 人物 / 地点 / 规则 / 物件」分节，每行为「- 名称：说明」。';
