@@ -174,6 +174,10 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
 .sheet-meta{display:flex;gap:10px;padding:6px 16px 4px;flex-wrap:wrap;}
 .line-input{flex:1;min-width:140px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card-2);font-size:14px;color:var(--ink);}
 .line-input:focus{outline:none;border-color:var(--gold);}
+select option, select optgroup{background:var(--card-2);color:var(--ink);}
+/* 强制 option 在暗色主题下用深色文字：系统下拉菜单常为白底，避免浅字看不清 */
+.theme-dark select option{color:#1a1525 !important;background:#f7f2ea !important;}
+.theme-dark select option:checked{background:var(--gold) !important;color:#1a1525 !important;}
 .line-input.full{width:100%;flex:none;}
 .big-text{flex:1;margin:10px 16px;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);font-size:15.5px;line-height:1.85;resize:none;color:var(--ink);background-image:linear-gradient(transparent 94%, color-mix(in srgb,var(--ink) 7%, transparent) 94%);background-size:100% 1.85em;background-attachment:local;}
 .big-text:focus{outline:none;border-color:var(--gold);}
@@ -267,7 +271,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-2</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-5</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -312,10 +316,6 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       <input id="fragTitle" class="big-input" placeholder="梦境标题…">
       <button class="icon-btn close-x" data-close="fragOverlay" aria-label="关闭">✕</button>
     </div>
-    <div class="sheet-meta">
-      <input id="fragTags" class="line-input" placeholder="标签，用逗号分隔，如：走廊, 红衣, 窒息">
-      <input id="fragMood" class="line-input" placeholder="情绪，如：不安 / 怀念 / 荒诞">
-    </div>
     <textarea id="fragContent" class="big-text" placeholder="把梦完整地写下来——画面、对白、气味、那种说不清的感觉。这里是一整页，随便写，随便滚，随时能拉回开头。"></textarea>
     <div class="link-box">
       <div class="link-label">已关联的设定卡 / 要素（自动汇总）</div>
@@ -342,7 +342,15 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       <select id="cardCat" class="line-input">
         <option value="民俗">民俗</option>
         <option value="都市传说">都市传说</option>
-        <option value="科幻">科幻</option>
+        <option value="新闻案件">新闻案件</option>
+        <option value="历史原型">历史原型</option>
+        <option value="神话原型">神话原型</option>
+        <option value="心理学">心理学</option>
+        <option value="建筑/空间">建筑/空间</option>
+        <option value="司法/制度">司法/制度</option>
+        <option value="妖怪图鉴">妖怪图鉴</option>
+        <option value="符号意象">符号意象</option>
+        <option value="影视文学参考">影视文学参考</option>
         <option value="其他">其他</option>
       </select>
     </div>
@@ -824,11 +832,9 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       html+='<div class="empty-hint">还没有梦境碎片。<br>点右下角「+」或上方按钮，打开整页便签把梦原原本本写下来。</div>';
     } else {
       w.fragments.slice().sort(function(a,b){return (b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt);}).forEach(function(f){
-        var tags=(f.tags||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('');
         html+='<div class="card" data-fid="'+f.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
           '<div class="card-title">'+esc(f.title||'（无标题）')+'</div>'+
-          (f.mood?'<div class="card-sub">情绪：'+esc(f.mood)+'</div>':'')+
-          '<div class="card-preview">'+esc(f.content||'')+'</div>'+(tags?'<div class="tag-row">'+tags+'</div>':'')+'</div>';
+          '<div class="card-preview">'+esc(f.content||'')+'</div></div>';
       });
     }
     box.innerHTML=html;
@@ -848,8 +854,6 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   function openFragEditor(id){
     editingFragId=id; var f=id?getFrag(id):null;
     $('#fragTitle').value=f?f.title:'';
-    $('#fragTags').value=f?(f.tags||[]).join(', '):'';
-    $('#fragMood').value=f?f.mood:'';
     $('#fragContent').value=f?f.content:'';
     $('#fragDelete').hidden=!id;
     renderFragLinked(f);
@@ -900,10 +904,9 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   }
   function saveFrag(){
     var w=activeWorld(), title=$('#fragTitle').value.trim(), content=$('#fragContent').value;
-    var tags=$('#fragTags').value.split(',').map(function(s){return s.trim();}).filter(Boolean), mood=$('#fragMood').value.trim();
     if(!title && !content){ toast('写点什么再保存吧'); return; }
-    if(editingFragId){ var f=getFrag(editingFragId); f.title=title; f.content=content; f.tags=tags; f.mood=mood; f.updatedAt=Date.now(); }
-    else { w.fragments.push({ id:uid(), title:title, content:content, tags:tags, mood:mood, createdAt:Date.now(), updatedAt:Date.now() }); }
+    if(editingFragId){ var f=getFrag(editingFragId); f.title=title; f.content=content; f.updatedAt=Date.now(); }
+    else { w.fragments.push({ id:uid(), title:title, content:content, createdAt:Date.now(), updatedAt:Date.now() }); }
     saveState(); $('#fragOverlay').hidden=true; renderFragments(); toast('已存入梦境碎片 ✦');
   }
   function deleteFragById(id){
