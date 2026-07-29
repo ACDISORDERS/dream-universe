@@ -1,4 +1,4 @@
-const CACHE = 'dv-cache-v4';
+const CACHE = 'dv-cache-v5';
 
 self.addEventListener('install', function (e) { self.skipWaiting(); });
 
