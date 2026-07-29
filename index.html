@@ -260,7 +260,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-3</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-4</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -1172,10 +1172,9 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   function setSyncCfg(o){ localStorage.setItem('dv_sync', JSON.stringify(o)); }
   function giteeApi(path, opts){
     opts=opts||{};
-    opts.headers=Object.assign({ 'Content-Type':'application/json', 'Accept':'application/json' }, opts.headers||{});
+    opts.headers=Object.assign({ 'Content-Type':'application/json;charset=UTF-8', 'Accept':'application/json' }, opts.headers||{});
     return fetch('https://gitee.com/api/v5'+path, opts);
   }
-  function auth(token){ return { 'Authorization':'Bearer '+token }; }
   function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
   function b64dec(s){
     // 兼容标准 base64、URL-safe base64、缺 padding、含空白
@@ -1185,20 +1184,22 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
   }
   // 用令牌拿到登录名 → 同步目标由令牌推导（同一令牌必定落到同一仓库），从而天然跨设备
   function giteeUser(token){
-    return giteeApi('/user', { headers: auth(token) }).then(function(r){
+    return giteeApi('/user?access_token='+encodeURIComponent(token)).then(function(r){
       if(!r.ok) throw new Error('令牌无效或无权限（'+r.status+'）'); return r.json();
     });
   }
   function ensureRepo(token, login){
-    return giteeApi('/repos/'+login+'/'+SYNC_REPO, { headers: auth(token) }).then(function(r){
-      if(r.ok) return r.json();
-      if(r.status===404) return giteeApi('/user/repos', { method:'POST', headers: auth(token), body: JSON.stringify({ name:SYNC_REPO, private:true, auto_init:true, description:'梦境宇宙 云同步' }) })
-        .then(function(cr){ if(!cr.ok) return cr.text().then(function(t){ throw new Error('创建仓库失败（需 projects 权限，'+cr.status+' '+(t||'').slice(0,120)+')'); }); return cr.json(); });
+    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'?access_token='+encodeURIComponent(token)).then(function(r){
+      if(r.ok) return r.json().then(function(j){ return j.default_branch || 'master'; });
+      if(r.status===404) return giteeApi('/user/repos', { method:'POST', body: JSON.stringify(Object.assign({ access_token:token }, { name:SYNC_REPO, private:true, auto_init:true, description:'梦境宇宙 云同步' })) })
+        .then(function(cr){ if(!cr.ok) return cr.text().then(function(t){ throw new Error('创建仓库失败（需 projects 权限，'+cr.status+' '+(t||'').slice(0,120)+')'); }); return cr.json().then(function(j){ return j.default_branch || 'master'; }); });
       throw new Error('检查仓库失败 '+r.status);
     });
   }
-  function loadGitee(token, login){
-    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE, { headers: auth(token) }).then(function(r){
+  function loadGitee(token, login, branch){
+    var url='/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE+'?access_token='+encodeURIComponent(token);
+    if(branch) url+='&ref='+encodeURIComponent(branch);
+    return giteeApi(url).then(function(r){
       if(r.status===404) return null;
       if(!r.ok) throw new Error('读取云端失败 '+r.status);
       return r.json().then(function(j){
@@ -1208,11 +1209,13 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       });
     }).catch(function(e){ if(/404/.test(e.message||'')) return null; throw e; });
   }
-  function saveGitee(token, login, st, sha){
-    var body={ content: b64enc(JSON.stringify(st)), message:'梦境宇宙 同步 '+new Date().toLocaleString() };
+  function saveGitee(token, login, st, sha, branch){
+    // 关键：Gitee 新建文件用 POST（无需 sha），更新已有文件用 PUT（必须 sha）
+    var body={ access_token:token, content: b64enc(JSON.stringify(st)), message:'梦境宇宙 同步 '+new Date().toLocaleString(), branch: branch||'master' };
     if(sha) body.sha=sha;
-    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE, { method:'PUT', headers: auth(token), body: JSON.stringify(body) })
-      .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error('写入云端失败 '+r.status+' '+(t||'').slice(0,160)); }); return r.json(); });
+    var method = sha ? 'PUT' : 'POST';
+    return giteeApi('/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE, { method: method, body: JSON.stringify(body) })
+      .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error((sha?'更新':'新建')+'云端失败 '+r.status+' '+(t||'').slice(0,160)); }); return r.json(); });
   }
 
   function mergeWorlds(base, inc){
@@ -1240,7 +1243,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     var c=syncCfg(); if(!c||!c.token){ if(!silent) openSync(); return Promise.resolve(); }
     if(!silent) $('#syncStatus').textContent='同步中…';
     function fail(msg){ if(!silent) $('#syncStatus').textContent='同步失败：'+msg; }
-    var login, sha=null;
+    var login, sha=null, branch='master';
     function applyRemote(remote){
       if(remote && remote.data && remote.data.worlds){ state=mergeWorlds(state, remote.data); saveState(); renderWorldList(); if(activeWorld()) selectWorld(state.activeWorldId); else showHome(); }
       if(remote) sha=remote.sha;
@@ -1248,8 +1251,8 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     return Promise.resolve()
       .then(function(){ return giteeUser(c.token); })
       .then(function(u){ login=u.login; return ensureRepo(c.token, login); })
-      .then(function(){ return loadGitee(c.token, login); })
-      .then(function(remote){ applyRemote(remote); return saveGitee(c.token, login, state, sha); })
+      .then(function(b){ branch=b||'master'; return loadGitee(c.token, login, branch); })
+      .then(function(remote){ applyRemote(remote); return saveGitee(c.token, login, state, sha, branch); })
       .then(function(){ c.lastSync=Date.now(); setSyncCfg(c); if(!silent){ $('#syncStatus').textContent='已同步 · '+new Date().toLocaleString(); } toast('已同步到码云'); })
       .catch(function(e){ fail(e && e.message); });
   }
