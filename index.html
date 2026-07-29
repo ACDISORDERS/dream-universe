@@ -1176,7 +1176,12 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     return fetch('https://gitee.com/api/v5'+path, opts);
   }
   function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function b64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s/g,'')))); }
+  function b64dec(s){
+    // 兼容标准 base64、URL-safe base64、缺 padding、含空白
+    var t=String(s||'').replace(/\s/g,'').replace(/-/g,'+').replace(/_/g,'/');
+    while(t.length % 4) t+='=';
+    return decodeURIComponent(escape(atob(t)));
+  }
   // 用令牌拿到登录名 → 同步目标由令牌推导（同一令牌必定落到同一仓库），从而天然跨设备
   function giteeUser(token){
     return giteeApi('/user?access_token='+encodeURIComponent(token)).then(function(r){
@@ -1187,7 +1192,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     return giteeApi('/repos/'+login+'/'+SYNC_REPO+'?access_token='+encodeURIComponent(token)).then(function(r){
       if(r.ok) return r.json();
       if(r.status===404) return giteeApi('/user/repos?access_token='+encodeURIComponent(token), { method:'POST', body: JSON.stringify({ name:SYNC_REPO, private:true, auto_init:true, description:'梦境宇宙 云同步' }) })
-        .then(function(cr){ if(!cr.ok) throw new Error('创建仓库失败（需 repo 权限，'+cr.status+'）'); return cr.json(); });
+        .then(function(cr){ if(!cr.ok) throw new Error('创建仓库失败（需 projects 权限，'+cr.status+'）'); return cr.json(); });
       throw new Error('检查仓库失败 '+r.status);
     });
   }
@@ -1195,7 +1200,11 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     return giteeApi('/repos/'+login+'/'+SYNC_REPO+'/contents/'+SYNC_FILE+'?access_token='+encodeURIComponent(token)).then(function(r){
       if(r.status===404) return null;
       if(!r.ok) throw new Error('读取云端失败 '+r.status);
-      return r.json().then(function(j){ return { sha:j.sha, data: JSON.parse(b64dec(j.content)) }; });
+      return r.json().then(function(j){
+        var sha=j.sha||null, data=null;
+        try{ data=JSON.parse(b64dec(j.content)); }catch(e){ console.warn('dreamverse 云端文件解码失败，将重新覆盖:', e.message); }
+        return { sha:sha, data:data };
+      });
     }).catch(function(e){ if(/404/.test(e.message||'')) return null; throw e; });
   }
   function saveGitee(token, login, st, sha){
@@ -1269,7 +1278,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       <p class="modal-hint">把全部世界存到你的<strong>码云 Gitee 私有仓库</strong>，手机 / 电脑登录同一令牌即自动同步。国内直连、无需翻墙，只需一个令牌。</p>
       <label class="field-label">码云私人令牌</label>
       <input id="syncToken" class="line-input full" type="password" placeholder="码云私人令牌" autocomplete="off">
-      <p id="syncHint" class="modal-hint" style="margin-top:10px">在码云生成令牌：<strong>设置 → 私人令牌 → 生成新令牌</strong>，勾选 <code>repo</code>（仓库权限），复制粘贴。应用会自动在你的账号下建一个私有仓库 <code>dreamverse-sync</code> 来存放数据，仅你本人可读。</p>
+      <p id="syncHint" class="modal-hint" style="margin-top:10px">在码云生成令牌：<strong>设置 → 私人令牌 → 生成新令牌</strong>，勾选 <code>projects</code>（仓库 / 项目权限），复制粘贴。应用会自动在你的账号下建一个私有仓库 <code>dreamverse-sync</code> 来存放数据，仅你本人可读。</p>
       <label class="field-label" style="display:flex;align-items:center;gap:8px;margin-top:12px">
         <input id="syncAuto" type="checkbox"> 自动同步（每次保存后）
       </label>
