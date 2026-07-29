@@ -260,7 +260,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-4</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260729-5</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -272,7 +272,7 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
       <p>从左上角的卷轴打开你的世界。<br>
          记录梦境碎片，手动补全世界观，<br>
          慢慢攒出一本属于你的小说。</p>
-      <div class="home-hint">✦ 每个世界都能自定义主题色，恐怖可深紫，童话可淡绿 ✦</div>
+      <div class="home-hint">✦ 每个世界都可自定义主题色，你的梦会是什么颜色呢？✦</div>
     </div>
 
     <div id="worldView" hidden>
@@ -596,10 +596,11 @@ input,textarea,select{font-family:var(--serif);color:var(--ink);}
     try{ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); } }catch(e){}
   }
   function seedWorlds(){
+    // 固定 ID：保证不同设备首次播种的「默认世界」ID 一致，跨设备同步时能被 mergeWorlds 按 id 去重，不再重复新增
     state.worlds=[
-      { id:uid(), name:'灵异恐怖', icon:'moon', themeColor:'#3b2a63', desc:'以民间诡异传闻为底色的恐怖梦境', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
-      { id:uid(), name:'鬼怪童话', icon:'star', themeColor:'#bfe3c4', desc:'似真似幻、带着童谣气味的怪谈', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
-      { id:uid(), name:'末世生存', icon:'crystal', themeColor:'#c2a36a', desc:'文明崩坏后的求生与重建', createdAt:Date.now(), fragments:[], elements:[], cards:[] }
+      { id:'seed-lingyi', name:'灵异恐怖', icon:'moon', themeColor:'#3b2a63', desc:'以民间诡异传闻为底色的恐怖梦境', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
+      { id:'seed-tonghua', name:'鬼怪童话', icon:'star', themeColor:'#bfe3c4', desc:'似真似幻、带着童谣气味的怪谈', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
+      { id:'seed-moshi', name:'末世生存', icon:'crystal', themeColor:'#c2a36a', desc:'文明崩坏后的求生与重建', createdAt:Date.now(), fragments:[], elements:[], cards:[] }
     ];
     state.activeWorldId=null; saveState();
   }
