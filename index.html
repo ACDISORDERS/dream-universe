@@ -204,6 +204,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
 /* 关联 / 灵感来源 */
 .link-box{margin:4px 16px 0;border-top:1px solid var(--line);padding-top:10px;}
 .link-label{font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;}
+.link-hint{font-size:11.5px;color:var(--ink-mute,#9b93a8);margin:-3px 0 9px;line-height:1.55;}
+.link-group-label{font-size:11px;color:var(--ink-mute,#9b93a8);letter-spacing:.04em;margin:6px 0 3px;padding-left:2px;}
 .link-list{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow-y:auto;}
 .link-item{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink);padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:var(--card-2);}
 .link-item input{width:17px;height:17px;accent-color:var(--gold);}
@@ -273,7 +275,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-6</span></div>
+      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-7</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -352,8 +354,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     </div>
     <img id="cardImgPrev" class="img-prev" alt="设定卡配图" hidden>
     <div class="link-box">
-      <div class="link-label">灵感来源碎片（可多选，建立与梦境的关联）</div>
-      <div id="cardFragLinks" class="link-list"></div>
+      <div class="link-label">灵感织网</div>
+      <div class="link-hint">可多选，把这条素材与梦境碎片、人物 / 地点 / 体系等要素织在一起；在对方条目里也能跳回来。</div>
+      <div id="cardLinks" class="link-list"></div>
     </div>
     <div class="sheet-foot">
       <span class="spacer"></span>
@@ -375,8 +378,10 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
       <select id="elemType" class="line-input">
         <option value="人物">人物</option>
         <option value="地点">地点</option>
-        <option value="规则">规则 / 魔法体系</option>
-        <option value="物件">物件 / 道具</option>
+        <option value="规则 / 体系">规则 / 体系</option>
+        <option value="物件 / 道具">物件 / 道具</option>
+        <option value="势力 / 组织">势力 / 组织</option>
+        <option value="文献 / 典籍">文献 / 典籍</option>
       </select>
       <select id="elemSource" class="line-input">
         <option value="梦境">来自梦境</option>
@@ -391,8 +396,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     </div>
     <img id="elemImgPrev" class="img-prev" alt="要素配图" hidden>
     <div class="link-box">
-      <div class="link-label">灵感来源碎片（可多选，建立与梦境的关联）</div>
-      <div id="elemFragLinks" class="link-list"></div>
+      <div class="link-label">灵感织网</div>
+      <div class="link-hint">可多选，把这条要素与梦境碎片、世界观词条织在一起；在对方条目里也能跳回来。</div>
+      <div id="elemLinks" class="link-list"></div>
     </div>
     <div class="sheet-foot">
       <span class="spacer"></span>
@@ -598,6 +604,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     $all('.tab-ico').forEach(function(el){ el.innerHTML = icon(el.getAttribute('data-ico')); });
     loadState().then(function(s){
       if(s && s.worlds){ state=s; } else { seedWorlds(); }
+      migrateState();
       dedupeSeedWorlds();
       renderWorldList();
       if(activeWorld()){ selectWorld(state.activeWorldId, true); } else { showHome(); }
@@ -650,6 +657,18 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     }
     state.worlds = state.worlds.filter(function(w){ return !dupIds[w.id]; });
     saveState();
+  }
+
+  // 数据迁移：旧版本用 frags 数组存关联，统一为 links:[{t,id}]；旧要素分类名对齐到新分类。
+  function migrateState(){
+    (state.worlds||[]).forEach(function(w){
+      (w.cards||[]).forEach(function(c){ if(c.frags && !c.links){ c.links=c.frags.map(function(id){return {t:'frag',id:id};}); } });
+      (w.elements||[]).forEach(function(e){
+        if(e.frags && !e.links){ e.links=e.frags.map(function(id){return {t:'frag',id:id};}); }
+        if(e.type==='规则') e.type='规则 / 体系';
+        else if(e.type==='物件') e.type='物件 / 道具';
+      });
+    });
   }
 
   /* ---------- 事件 ---------- */
@@ -876,21 +895,21 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     if(elemImgData){ prev.src=elemImgData; prev.hidden=false; } else { prev.removeAttribute('src'); prev.hidden=true; }
   }
   function renderFragLinked(f){
-    var w=activeWorld(), box=$('#fragLinked'); box.innerHTML='';
+    var box=$('#fragLinked'); box.innerHTML='';
     if(!f){ return; }
-    var cards=(w.cards||[]).filter(function(c){ return (c.frags||[]).indexOf(f.id)>=0; });
-    var elems=(w.elements||[]).filter(function(e){ return (e.frags||[]).indexOf(f.id)>=0; });
-    if(!cards.length && !elems.length){ box.innerHTML='<div class="link-item readonly">（暂未关联任何设定卡 / 要素）</div>'; return; }
-    cards.forEach(function(c){
-      var d=document.createElement('div'); d.className='link-item link-jump'; d.setAttribute('data-cid', c.id);
-      d.textContent='◆ 设定卡：'+esc(c.title||'（无标题）');
-      d.addEventListener('click', function(){ if(confirm('跳转到对应的设定卡「'+(c.title||'')+'」？')) openCardEditor(c.id); });
-      box.appendChild(d);
-    });
-    elems.forEach(function(e){
-      var d=document.createElement('div'); d.className='link-item link-jump'; d.setAttribute('data-eid', e.id);
-      d.textContent='◇ 要素：'+esc(e.name||'（未命名）');
-      d.addEventListener('click', function(){ if(confirm('跳转到对应的要素「'+(e.name||'')+'」？')) openElemEditor(e.id); });
+    var list=findLinksTo('frag', f.id);
+    if(!list.length){ box.innerHTML='<div class="link-item readonly">（暂未关联任何设定卡 / 要素）</div>'; return; }
+    list.forEach(function(x){
+      var d=document.createElement('div'); d.className='link-item link-jump';
+      if(x.t==='card'){
+        d.setAttribute('data-cid', x.obj.id);
+        d.textContent='◆ 设定卡：'+esc(x.obj.title||'（无标题）');
+        d.addEventListener('click', function(){ if(confirm('跳转到对应的设定卡「'+(x.obj.title||'')+'」？')) openCardEditor(x.obj.id); });
+      } else {
+        d.setAttribute('data-eid', x.obj.id);
+        d.textContent='◇ 要素：'+esc(x.obj.name||'（未命名）');
+        d.addEventListener('click', function(){ if(confirm('跳转到对应的要素「'+(x.obj.name||'')+'」？')) openElemEditor(x.obj.id); });
+      }
       box.appendChild(d);
     });
   }
@@ -904,8 +923,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   function deleteFragById(id){
     var w=activeWorld();
     w.fragments=w.fragments.filter(function(x){return x.id!==id;});
-    (w.cards||[]).forEach(function(c){ c.frags=(c.frags||[]).filter(function(f){return f!==id;}); });
-    (w.elements||[]).forEach(function(e){ e.frags=(e.frags||[]).filter(function(f){return f!==id;}); });
+    (w.cards||[]).forEach(function(c){ c.links=(c.links||[]).filter(function(l){return l.t!=='frag'||l.id!==id;}); });
+    (w.elements||[]).forEach(function(e){ e.links=(e.links||[]).filter(function(l){return l.t!=='frag'||l.id!==id;}); });
     saveState(); $('#fragOverlay').hidden=true; renderFragments();
   }
   function deleteFrag(){
@@ -947,7 +966,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     }) : list;
     var html='';
     if(!w.cards.length){
-      html='<div class="empty-hint">还没有设定卡。<br>点「+ 新建设定卡」，整页写下你为这个世界补充的民俗 / 都市传说 / 科幻设定。<br>'+
+      html='<div class="empty-hint">还没有设定卡。<br>点「+ 新建设定卡」，整页写下你为这个世界补充的民俗 / 都市传说 / 历史原型。<br>'+
         '（也可以去梦境碎片里点「整理并委托 WorkBuddy → 补全世界观」，联网检索后把结果粘回来。）</div>';
     } else if(!matched.length){
       html='<div class="empty-hint">没有匹配「'+esc(wvFilter.trim())+'」的设定卡。</div>';
@@ -955,8 +974,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
       matched.forEach(function(c){
         var catArr=Array.isArray(c.category)?c.category:(c.category?[c.category]:[]);
         var cat=catArr.length?catArr.map(function(k){return '<span class="badge cat">'+esc(k)+'</span>';}).join(''):'';
-        var firstFrag=(c.frags&&c.frags.length)?c.frags[0]:'';
-        var link=(c.frags&&c.frags.length)?('<span class="badge jump" data-frag="'+firstFrag+'">关联 '+c.frags.length+' 个碎片 ↗</span>'):'';
+        var nbrs=uniqueNeighbors('card', c.id);
+        var link=(nbrs.length)?('<span class="badge jump" data-ltype="'+nbrs[0].t+'" data-lid="'+nbrs[0].id+'">关联 '+nbrs.length+' 个来源 ↗</span>'):'';
         html+='<div class="card" data-cid="'+c.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
           '<div class="card-title">'+esc(c.title||'（无标题）')+'</div>'+
           '<div class="tag-row">'+cat+link+'</div>'+
@@ -975,8 +994,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
           return;
         }
         if(e.target.closest('.badge.jump')){
-          var fid=e.target.closest('.badge.jump').getAttribute('data-frag');
-          if(fid && confirm('跳转到关联的梦境碎片？')) openFragEditor(fid);
+          var lt=e.target.closest('.badge.jump').getAttribute('data-ltype');
+          var lid=e.target.closest('.badge.jump').getAttribute('data-lid');
+          if(lid){ if(lt==='frag'){ if(confirm('跳转到关联的梦境碎片？')) openFragEditor(lid); } else if(lt==='elem'){ if(confirm('跳转到关联的要素？')) openElemEditor(lid); } else if(lt==='card'){ if(confirm('跳转到关联的设定卡？')) openCardEditor(lid); } }
           return;
         }
         openCardEditor(c.getAttribute('data-cid'));
@@ -990,7 +1010,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     renderCardCats(c?c.category:['民俗']);
     $('#cardContent').value=c?c.content:'';
     $('#cardDelete').hidden=!id;
-    renderFragLinks('#cardFragLinks', c?c.frags:[]);
+    renderLinkBox('#cardLinks', buildLinkGroups('card'), c?c.links:[]);
     cardImgData=c?(c.image||''):'';
     renderCardImgPrev();
     setReadMode($('#cardOverlay'), !id);
@@ -1000,22 +1020,26 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   function saveCard(){
     var w=activeWorld(), title=$('#cardTitle').value.trim(), content=$('#cardContent').value.trim();
     if(!title && !content){ toast('写点什么再保存吧'); return; }
-    var frags=readFragLinks('#cardFragLinks');
+    var links=readLinkBox('#cardLinks');
     var cats=$all('#cardCats input:checked').map(function(i){ return i.getAttribute('data-cat'); });
     if(!cats.length){ cats=['其他']; }
-    if(editingCardId){ var c=getCard(editingCardId); c.title=title; c.content=content; c.category=cats; c.frags=frags; c.image=cardImgData; }
-    else { w.cards.push({ id:uid(), title:title, content:content, category:cats, frags:frags, image:cardImgData, createdAt:Date.now() }); }
+    var id;
+    if(editingCardId){ var c=getCard(editingCardId); c.title=title; c.content=content; c.category=cats; c.links=links; c.image=cardImgData; id=editingCardId; }
+    else { var nc={ id:uid(), title:title, content:content, category:cats, links:links, image:cardImgData, createdAt:Date.now() }; w.cards.push(nc); id=nc.id; }
+    reconcileLinks('card', id, links);
     saveState(); $('#cardOverlay').hidden=true; renderWorldview(); toast('设定卡已保存 ✦');
   }
   function deleteCard(){
     if(!editingCardId) return; var c=getCard(editingCardId);
     if(!confirm('删除设定卡「'+(c.title||'')+'」？')) return;
     activeWorld().cards=activeWorld().cards.filter(function(x){return x.id!==editingCardId;});
+    (activeWorld().elements||[]).forEach(function(e){ e.links=(e.links||[]).filter(function(l){return l.t!=='card'||l.id!==editingCardId;}); });
+    (activeWorld().fragments||[]).forEach(function(f){ f.links=(f.links||[]).filter(function(l){return l.t!=='card'||l.id!==editingCardId;}); });
     saveState(); $('#cardOverlay').hidden=true; renderWorldview();
   }
 
   /* ---------- 要素库（整页手动） ---------- */
-  var ELEM_TYPES=[{key:'人物',ico:'feather'},{key:'地点',ico:'scroll'},{key:'规则',ico:'wand'},{key:'物件',ico:'potion'}];
+  var ELEM_TYPES=[{key:'人物',ico:'feather'},{key:'地点',ico:'scroll'},{key:'规则 / 体系',ico:'wand'},{key:'物件 / 道具',ico:'potion'},{key:'势力 / 组织',ico:'crystal'},{key:'文献 / 典籍',ico:'book'}];
   function renderElements(){
     var box=$('#elementsView');
     if(!box.querySelector('#elList')){
@@ -1036,7 +1060,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     var kw=elFilter.trim().toLowerCase();
     var html='';
     if(!w.elements.length){
-      html='<div class="empty-hint">要素库还是空的。<br>写梦后，把出现的人物 / 地点 / 规则 / 物件逐个「+ 新建要素」记下来，并标上它来自哪条碎片。<br>日后积累成世界观，再扩写成书。</div>';
+      html='<div class="empty-hint">要素库还是空的。<br>写梦后，把出现的人物 / 地点 / 规则·体系 / 物件 / 势力 / 文献逐个「+ 新建要素」记下来，并标上它来自哪条碎片。<br>日后积累成世界观，再扩写成书。</div>';
     } else {
       var any=false;
       ELEM_TYPES.forEach(function(t){
@@ -1052,8 +1076,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
         html+='<div class="elem-group"><h3><span class="g-ico">'+icon(t.ico)+'</span>'+esc(t.key)+' <span class="card-sub">('+items.length+')</span></h3>';
         items.forEach(function(e){
           var src=e.source==='搜索'?'<span class="badge search">搜索</span>':'<span class="badge dream">梦境</span>';
-          var firstFrag=(e.frags&&e.frags.length)?e.frags[0]:'';
-          var link=(e.frags&&e.frags.length)?('<span class="badge jump" data-frag="'+firstFrag+'">关联 '+e.frags.length+' 个碎片 ↗</span>'):'';
+          var nbrs=uniqueNeighbors('elem', e.id);
+          var link=(nbrs.length)?('<span class="badge jump" data-ltype="'+nbrs[0].t+'" data-lid="'+nbrs[0].id+'">关联 '+nbrs.length+' 个来源 ↗</span>'):'';
           html+='<div class="card" data-eid="'+e.id+'"><button class="card-x" data-x="1" title="删除">✕</button>'+
             '<div class="card-title">'+esc(e.name)+'</div><div class="tag-row">'+src+link+'</div>'+
             (e.image?'<img class="card-img" src="'+e.image+'">':'')+
@@ -1074,8 +1098,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
           return;
         }
         if(e.target.closest('.badge.jump')){
-          var fid=e.target.closest('.badge.jump').getAttribute('data-frag');
-          if(fid && confirm('跳转到关联的梦境碎片？')) openFragEditor(fid);
+          var lt=e.target.closest('.badge.jump').getAttribute('data-ltype');
+          var lid=e.target.closest('.badge.jump').getAttribute('data-lid');
+          if(lid){ if(lt==='frag'){ if(confirm('跳转到关联的梦境碎片？')) openFragEditor(lid); } else if(lt==='elem'){ if(confirm('跳转到关联的要素？')) openElemEditor(lid); } else if(lt==='card'){ if(confirm('跳转到关联的设定卡？')) openCardEditor(lid); } }
           return;
         }
         openElemEditor(c.getAttribute('data-eid'));
@@ -1090,7 +1115,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     $('#elemSource').value=e?e.source:'梦境';
     $('#elemDesc').value=e?e.desc:'';
     $('#elemDelete').hidden=!id;
-    renderFragLinks('#elemFragLinks', e?e.frags:[]);
+    renderLinkBox('#elemLinks', buildLinkGroups('elem'), e?e.links:[]);
     elemImgData=e?(e.image||''):'';
     renderElemImgPrev();
     setReadMode($('#elemOverlay'), !id);
@@ -1100,33 +1125,78 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   function saveElem(){
     var w=activeWorld(), name=$('#elemName').value.trim();
     if(!name){ toast('给要素起个名字'); return; }
-    var frags=readFragLinks('#elemFragLinks');
-    if(editingElemId){ var e=getElem(editingElemId); e.name=name; e.type=$('#elemType').value; e.source=$('#elemSource').value; e.desc=$('#elemDesc').value; e.frags=frags; e.image=elemImgData; }
-    else { w.elements.push({ id:uid(), name:name, type:$('#elemType').value, source:$('#elemSource').value, desc:$('#elemDesc').value, frags:frags, image:elemImgData, createdAt:Date.now() }); }
+    var links=readLinkBox('#elemLinks');
+    var id;
+    if(editingElemId){ var e=getElem(editingElemId); e.name=name; e.type=$('#elemType').value; e.source=$('#elemSource').value; e.desc=$('#elemDesc').value; e.links=links; e.image=elemImgData; id=editingElemId; }
+    else { var ne={ id:uid(), name:name, type:$('#elemType').value, source:$('#elemSource').value, desc:$('#elemDesc').value, links:links, image:elemImgData, createdAt:Date.now() }; w.elements.push(ne); id=ne.id; }
+    reconcileLinks('elem', id, links);
     saveState(); $('#elemOverlay').hidden=true; renderElements(); toast('要素已入库 ✦');
   }
   function deleteElem(){
     if(!editingElemId) return; var e=getElem(editingElemId);
     if(!confirm('删除要素「'+(e.name||'')+'」？')) return;
     activeWorld().elements=activeWorld().elements.filter(function(x){return x.id!==editingElemId;});
+    (activeWorld().cards||[]).forEach(function(c){ c.links=(c.links||[]).filter(function(l){return l.t!=='elem'||l.id!==editingElemId;}); });
+    (activeWorld().fragments||[]).forEach(function(f){ f.links=(f.links||[]).filter(function(l){return l.t!=='elem'||l.id!==editingElemId;}); });
     saveState(); $('#elemOverlay').hidden=true; renderElements();
   }
 
-  /* ---------- 灵感来源碎片（联动） ---------- */
-  function renderFragLinks(sel, selected){
-    var w=activeWorld(), box=$(sel); if(!box) return; box.innerHTML='';
-    if(!w.fragments.length){ box.innerHTML='<div class="link-item readonly">（还没有梦境碎片，先去记录）</div>'; return; }
-    var sel=selected||[];
-    w.fragments.forEach(function(f){
-      var id=f.id, on=sel.indexOf(id)>=0;
-      var lab=document.createElement('label'); lab.className='link-item';
-      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-fid="'+id+'"><span>'+esc(f.title||'（无标题）')+'</span>';
-      box.appendChild(lab);
+  /* ---------- 灵感织网（跨碎片 / 设定卡 / 要素 的双向关联） ---------- */
+  function findLinksTo(type, id){
+    var w=activeWorld(), res=[];
+    (w.cards||[]).forEach(function(c){ (c.links||[]).forEach(function(l){ if(l.t===type && l.id===id) res.push({t:'card', obj:c}); }); });
+    (w.elements||[]).forEach(function(e){ (e.links||[]).forEach(function(l){ if(l.t===type && l.id===id) res.push({t:'elem', obj:e}); }); });
+    (w.fragments||[]).forEach(function(f){ (f.links||[]).forEach(function(l){ if(l.t===type && l.id===id) res.push({t:'frag', obj:f}); }); });
+    return res;
+  }
+  // 保持双向：保存实体 X 的 links 时，把反向链接也写回被关联的目标实体；移除已取消的关联。
+  function reconcileLinks(selfType, selfId, links){
+    var w=activeWorld();
+    function strip(bucket){ (w[bucket]||[]).forEach(function(x){ x.links=(x.links||[]).filter(function(l){ return !(l.t===selfType && l.id===selfId); }); }); }
+    function add(bucket, id){ if(!id) return; (w[bucket]||[]).forEach(function(x){ if(x.id===id){ x.links=x.links||[]; if(!x.links.some(function(l){return l.t===selfType&&l.id===selfId;})) x.links.push({t:selfType,id:selfId}); } }); }
+    strip('cards'); strip('elements'); strip('fragments');
+    (links||[]).forEach(function(l){
+      if(l.t==='frag') add('fragments', l.id);
+      else if(l.t==='elem') add('elements', l.id);
+      else if(l.t==='card') add('cards', l.id);
     });
   }
-  function readFragLinks(sel){
+  // 该实体的全部关联邻居（双向去重），用于列表徽章计数。
+  function uniqueNeighbors(selfType, selfId){
+    var seen={}, arr=[];
+    function add(t,id){ var k=t+':'+id; if(!seen[k]){ seen[k]=1; arr.push({t:t,id:id}); } }
+    var list = selfType==='card' ? activeWorld().cards : selfType==='elem' ? activeWorld().elements : activeWorld().fragments;
+    (list||[]).forEach(function(x){ (x.links||[]).forEach(function(l){ add(l.t, l.id); }); });
+    findLinksTo(selfType, selfId).forEach(function(x){ add(x.t, x.obj.id); });
+    return arr;
+  }
+  function buildLinkGroups(selfType){
+    var w=activeWorld(), g=[];
+    if(selfType!=='frag') g.push({label:'梦境碎片', type:'frag', items:(w.fragments||[]).map(function(f){return {id:f.id,title:f.title||'（无标题）'};})});
+    if(selfType!=='card') g.push({label:'世界观词条', type:'card', items:(w.cards||[]).map(function(c){return {id:c.id,title:c.title||'（无标题）'};})});
+    if(selfType!=='elem') g.push({label:'要素', type:'elem', items:(w.elements||[]).map(function(e){return {id:e.id,title:e.name||'（未命名）'};})});
+    return g;
+  }
+  function renderLinkBox(sel, groups, selected){
+    var box=$(sel); if(!box) return; box.innerHTML='';
+    var sel=(selected||[]);
+    function isOn(t,id){ return sel.some(function(l){ return l.t===t && l.id===id; }); }
+    var items=0;
+    groups.forEach(function(grp){
+      if(!grp.items.length) return;
+      var gh=document.createElement('div'); gh.className='link-group-label'; gh.textContent=grp.label; box.appendChild(gh);
+      grp.items.forEach(function(it){
+        items++;
+        var lab=document.createElement('label'); lab.className='link-item';
+        lab.innerHTML='<input type="checkbox" '+(isOn(grp.type,it.id)?'checked':'')+' data-lt="'+grp.type+'" data-lid="'+it.id+'"><span>'+esc(it.title)+'</span>';
+        box.appendChild(lab);
+      });
+    });
+    if(!items){ box.innerHTML='<div class="link-item readonly">（暂无可关联的素材）</div>'; }
+  }
+  function readLinkBox(sel){
     var box=$(sel); if(!box) return [];
-    return $all(sel+' input[type=checkbox]:checked').map(function(i){ return i.getAttribute('data-fid'); });
+    return $all(sel+' input[type=checkbox]:checked').map(function(i){ return { t:i.getAttribute('data-lt'), id:i.getAttribute('data-lid') }; });
   }
 
   /* ---------- 委托 / 导入（可选辅助） ---------- */
@@ -1194,7 +1264,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
         '（写作钩子：可以怎样嫁接到我的故事里）\n\n'+
         '（可输出多张，每张以 ### 开头，务必保留「分类：」这一行）';
     } else {
-      hint='我来把选定碎片整理成人物 / 地点 / 规则 / 物件，方便你录入要素库。';
+      hint='我来把选定碎片整理成人物 / 地点 / 规则·体系 / 物件 / 势力 / 文献，方便你录入要素库。';
       txt='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有某类就省略该标题）：\n\n'+
         '## 人物\n- 名称：一句话设定\n## 地点\n- 名称：一句话设定\n## 规则（魔法 / 世界观）\n- 名称：一句话设定\n## 物件\n- 名称：一句话设定\n\n'+
         '【世界背景】'+esc2(w.name)+'：'+(w.desc||'（未设定）')+'\n【梦境碎片】\n标题：'+((frag&&frag.title)||'（无标题）')+'\n内容：\n'+((frag&&frag.content)||'')+'\n';
@@ -1207,7 +1277,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     if(type==='cards'){ $('#importTitle').textContent='粘贴导入设定卡'; $('#importHint').textContent='把设定卡粘贴进来，每张以「### 标题」开头，并用「分类：民俗 / 都市传说 / 新闻案件 / 历史原型 / 神话原型 / 心理学 …」标注类型。'; }
     else {
       $('#importTitle').textContent='粘贴导入要素';
-      var hint='用「## 人物 / 地点 / 规则 / 物件」分节，每行为「- 名称：说明」。';
+      var hint='用「## 人物 / 地点 / 规则·体系 / 物件 / 势力 / 文献」分节，每行为「- 名称：说明」。';
       if(importTargetFragId){
         var f=activeWorld().fragments.filter(function(x){return x.id===importTargetFragId;})[0];
         if(f) hint+='（将自动关联到梦境碎片《'+(f.title||'无标题')+'》，导入后可在要素编辑中手动修改）';
@@ -1266,9 +1336,11 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   function mapType(h){
     if(/人物|角色|人/.test(h)) return '人物';
     if(/地点|场景|地/.test(h)) return '地点';
-    if(/规则|魔法|世界观|体系|设定/.test(h)) return '规则';
-    if(/物件|道具|物/.test(h)) return '物件';
-    return '物件';
+    if(/规则|魔法|世界观|体系|设定|制度|律法/.test(h)) return '规则 / 体系';
+    if(/物件|道具|物/.test(h)) return '物件 / 道具';
+    if(/势力|组织|门派|家族|党派|宗室/.test(h)) return '势力 / 组织';
+    if(/文献|典籍|书|经|史|诏|典籍/.test(h)) return '文献 / 典籍';
+    return '物件 / 道具';
   }
 
   /* ---------- 导出 / 导入备份 ---------- */
@@ -1374,7 +1446,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     function fail(msg){ if(!silent) $('#syncStatus').textContent='同步失败：'+msg; }
     var login, sha=null, branch='master';
     function applyRemote(remote){
-      if(remote && remote.data && remote.data.worlds){ state=mergeWorlds(state, remote.data); dedupeSeedWorlds(); saveState(); renderWorldList(); if(activeWorld()) selectWorld(state.activeWorldId); else showHome(); }
+      if(remote && remote.data && remote.data.worlds){ state=mergeWorlds(state, remote.data); migrateState(); dedupeSeedWorlds(); saveState(); renderWorldList(); if(activeWorld()) selectWorld(state.activeWorldId); else showHome(); }
       if(remote) sha=remote.sha;
     }
     return Promise.resolve()
