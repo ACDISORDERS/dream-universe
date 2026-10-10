@@ -275,7 +275,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>为盘醋包饺子 · 梦境工作台 · <span id="appVersion">v20260730-7</span></div>
+      <div>梦境工作台 · <span id="appVersion">v20260730-10</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -533,6 +533,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   var promptMode='extract', promptTargetFragId=null;
   var WV_CATS=[{k:'民俗',d:true},{k:'都市传说',d:true},{k:'新闻案件',d:true},{k:'历史原型',d:true},{k:'神话原型',d:true},{k:'心理学',d:true},{k:'建筑/空间',d:false},{k:'司法/制度',d:false},{k:'妖怪图鉴',d:false},{k:'符号意象',d:false},{k:'影视文学参考',d:false}];
   var wvCatSel={}; WV_CATS.forEach(function(c){ wvCatSel[c.k]=c.d; });
+  var elCatSel={};
 
   function uid(){ return (crypto.randomUUID && crypto.randomUUID()) || ('w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)); }
   function $(s){ return document.querySelector(s); }
@@ -618,10 +619,11 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
   }
   function seedWorlds(){
     // 固定 ID：保证不同设备首次播种的「默认世界」ID 一致，跨设备同步时能被 mergeWorlds 按 id 去重，不再重复新增
+    // updatedAt 固定为 0：用户一旦改名/改色/改简介，saveWorld 会写入 Date.now()，合并时必然比种子新，从而跨设备同步生效
     state.worlds=[
-      { id:'seed-lingyi', name:'灵异恐怖', icon:'moon', themeColor:'#3b2a63', desc:'以民间诡异传闻为底色的恐怖梦境', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
-      { id:'seed-tonghua', name:'鬼怪童话', icon:'star', themeColor:'#bfe3c4', desc:'似真似幻、带着童谣气味的怪谈', createdAt:Date.now(), fragments:[], elements:[], cards:[] },
-      { id:'seed-moshi', name:'末世生存', icon:'crystal', themeColor:'#c2a36a', desc:'文明崩坏后的求生与重建', createdAt:Date.now(), fragments:[], elements:[], cards:[] }
+      { id:'seed-lingyi', name:'灵异恐怖', icon:'moon', themeColor:'#3b2a63', desc:'以民间诡异传闻为底色的恐怖梦境', createdAt:Date.now(), updatedAt:0, fragments:[], elements:[], cards:[] },
+      { id:'seed-tonghua', name:'鬼怪童话', icon:'star', themeColor:'#bfe3c4', desc:'似真似幻、带着童谣气味的怪谈', createdAt:Date.now(), updatedAt:0, fragments:[], elements:[], cards:[] },
+      { id:'seed-moshi', name:'末世生存', icon:'crystal', themeColor:'#c2a36a', desc:'文明崩坏后的求生与重建', createdAt:Date.now(), updatedAt:0, fragments:[], elements:[], cards:[] }
     ];
     state.activeWorldId=null; saveState();
   }
@@ -650,6 +652,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
           if(!existing[it.id]) keeper[k].push(JSON.parse(JSON.stringify(it)));
         });
       });
+      keeper.updatedAt = Math.max(keeper.updatedAt||0, w.updatedAt||0);
     });
     // 如果当前正在看重复项，切到规范世界
     if(state.activeWorldId && dupIds[state.activeWorldId]){
@@ -725,7 +728,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     $('#promptFragPick').addEventListener('input', refreshPromptText);
     $('#promptCats').addEventListener('change', function(e){
       var cat=e.target && e.target.getAttribute('data-cat');
-      if(cat){ wvCatSel[cat]=e.target.checked; refreshPromptText(); }
+      if(!cat) return;
+      var sel = (promptMode==='extract') ? elCatSel : wvCatSel;
+      sel[cat]=e.target.checked; refreshPromptText();
     });
     $all('#promptModeSwitch button').forEach(function(b){
       b.addEventListener('click', function(){ openPromptModal(b.getAttribute('data-mode'), $('#promptFragPick').value); });
@@ -788,9 +793,9 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     var desc=$('#worldDesc').value.trim();
     if(worldModalId){
       var w=state.worlds.filter(function(x){return x.id===worldModalId;})[0];
-      w.name=name; w.desc=desc; w.themeColor=worldModalColor; w.icon=worldModalIcon;
+      w.name=name; w.desc=desc; w.themeColor=worldModalColor; w.icon=worldModalIcon; w.updatedAt=Date.now();
     } else {
-      state.worlds.push({ id:uid(), name:name, icon:worldModalIcon, themeColor:worldModalColor, desc:desc, createdAt:Date.now(), fragments:[], elements:[], cards:[] });
+      state.worlds.push({ id:uid(), name:name, icon:worldModalIcon, themeColor:worldModalColor, desc:desc, createdAt:Date.now(), updatedAt:Date.now(), fragments:[], elements:[], cards:[] });
     }
     saveState(); renderWorldList(); $('#worldModal').hidden=true;
     if(activeWorld()){ applyTheme(activeWorld().themeColor); renderWorldHead(); }
@@ -1040,6 +1045,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
 
   /* ---------- 要素库（整页手动） ---------- */
   var ELEM_TYPES=[{key:'人物',ico:'feather'},{key:'地点',ico:'scroll'},{key:'规则 / 体系',ico:'wand'},{key:'物件 / 道具',ico:'potion'},{key:'势力 / 组织',ico:'crystal'},{key:'文献 / 典籍',ico:'book'}];
+  ELEM_TYPES.forEach(function(t){ elCatSel[t.key]=true; });
   function renderElements(){
     var box=$('#elementsView');
     if(!box.querySelector('#elList')){
@@ -1214,16 +1220,19 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     importTargetFragId = (mode==='extract' && sel.value) ? sel.value : null;
     // 高亮模式按钮
     $all('#promptModeSwitch button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===mode); });
-    $('#promptCats').hidden = (mode!=='worldview');
-    if(mode==='worldview') renderPromptCats();
+    $('#promptCats').hidden = false;
+    renderPromptCats();
     refreshPromptText(); $('#promptModal').hidden=false;
   }
   function renderPromptCats(){
     var box=$('#promptCats'); if(!box) return; box.innerHTML='';
-    WV_CATS.forEach(function(c){
-      var on=!!wvCatSel[c.k];
+    var isExtract = (promptMode==='extract');
+    var list = isExtract ? ELEM_TYPES.map(function(t){ return {k:t.key}; }) : WV_CATS;
+    var sel = isExtract ? elCatSel : wvCatSel;
+    list.forEach(function(c){
+      var on=!!sel[c.k];
       var lab=document.createElement('label'); lab.className='cat-chip';
-      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-cat="'+c.k+'"><span>'+c.k+'</span>';
+      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-cat="'+esc(c.k)+'"><span>'+esc(c.k)+'</span>';
       box.appendChild(lab);
     });
   }
@@ -1264,10 +1273,13 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
         '（写作钩子：可以怎样嫁接到我的故事里）\n\n'+
         '（可输出多张，每张以 ### 开头，务必保留「分类：」这一行）';
     } else {
-      hint='我来把选定碎片整理成人物 / 地点 / 规则·体系 / 物件 / 势力 / 文献，方便你录入要素库。';
-      txt='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有某类就省略该标题）：\n\n'+
-        '## 人物\n- 名称：一句话设定\n## 地点\n- 名称：一句话设定\n## 规则（魔法 / 世界观）\n- 名称：一句话设定\n## 物件\n- 名称：一句话设定\n\n'+
-        '【世界背景】'+esc2(w.name)+'：'+(w.desc||'（未设定）')+'\n【梦境碎片】\n标题：'+((frag&&frag.title)||'（无标题）')+'\n内容：\n'+((frag&&frag.content)||'')+'\n';
+      var elCats = ELEM_TYPES.map(function(t){ return t.key; }).filter(function(k){ return elCatSel[k]; });
+      hint='勾选要抽取成要素的类别（默认全选），我把选定碎片整理成对应的结构，方便你录入要素库。';
+      var head='请帮我把下面这条「梦境碎片」整理 / 抽取为结构化要素，方便我录入要素库。\n请严格按以下格式输出（没有勾选的类别就省略其标题）：\n\n';
+      var body='';
+      elCats.forEach(function(k){ body += '## '+k+'\n- 名称：一句话设定\n'; });
+      if(!body) body='（请在上方至少勾选一个类别）\n';
+      txt = head + body + '\n【世界背景】'+esc2(w.name)+'：'+(w.desc||'（未设定）')+'\n【梦境碎片】\n标题：'+((frag&&frag.title)||'（无标题）')+'\n内容：\n'+((frag&&frag.content)||'')+'\n';
     }
     $('#promptHint').textContent=hint;
     $('#promptText').value=txt;
@@ -1293,13 +1305,17 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     if(importType==='cards'){
       parseCards(text).forEach(function(c){ w.cards.push({ id:uid(), title:c.title, content:c.content, category:c.category, frags:[], createdAt:Date.now() }); n++; });
     } else {
-      var targetFrag = importTargetFragId;
+      var targetFrag = importTargetFragId, newIds=[];
       parseElements(text).forEach(function(e){
-        var frags = [];
-        if(targetFrag){ frags.push(targetFrag); }
-        w.elements.push({ id:uid(), name:e.name, type:e.type, source:'搜索', desc:e.desc, frags:frags, createdAt:Date.now() });
-        n++;
+        var ne={ id:uid(), name:e.name, type:e.type, source:'搜索', desc:e.desc, links:[], createdAt:Date.now() };
+        if(targetFrag){ ne.links.push({t:'frag', id:targetFrag}); }
+        w.elements.push(ne); newIds.push(ne.id); n++;
       });
+      // 写入反向链接，让碎片侧也能看到关联（灵感织网双向同步）
+      if(targetFrag){
+        var f=w.fragments.filter(function(x){ return x.id===targetFrag; })[0];
+        if(f){ f.links=f.links||[]; newIds.forEach(function(id){ if(!f.links.some(function(l){ return l.t==='elem'&&l.id===id; })) f.links.push({t:'elem', id:id}); }); }
+      }
     }
     if(n===0){ toast('没解析到内容，检查下格式'); return; }
     var targetName = '';
@@ -1433,6 +1449,10 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
         (iw[k]||[]).forEach(function(it){ if(!bm[it.id]) out.push(JSON.parse(JSON.stringify(it))); });
         tgt[k]=out;
       });
+      // 世界级别的标量字段（名称 / 背景色 / 简介 / 图标）也必须按「最后修改时间」胜出，
+      // 否则改过的世界名、设定、背景色无法跨设备同步（之前只合并了碎片/设定卡/要素数组）。
+      var bu=bw.updatedAt||0, iu=iw.updatedAt||0, src=(iu>=bu)?iw:bw;
+      ['name','themeColor','desc','icon','updatedAt'].forEach(function(f){ if(src[f]!==undefined) tgt[f]=src[f]; });
     });
     return m;
   }
