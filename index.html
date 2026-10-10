@@ -211,6 +211,23 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
 .link-item input{width:17px;height:17px;accent-color:var(--gold);}
 .link-item.readonly{background:transparent;border-style:dashed;}
 
+/* ===== 折叠式选择（移动端友好） ===== */
+.cat-list.compact{flex-direction:column;gap:7px;}
+.cat-selected{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;min-height:30px;align-items:center;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.cat-selected::-webkit-scrollbar{display:none;}
+.cat-selected .empty{color:var(--ink-mute,#9b93a8);font-size:13px;}
+.cat-options{display:flex;flex-wrap:wrap;gap:6px;padding-top:4px;}
+.cat-options[hidden]{display:none;}
+.cat-toggle,.link-toggle{font-size:12.5px;padding:5px 11px;border-radius:8px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink-soft);white-space:nowrap;cursor:pointer;align-self:flex-start;}
+.cat-toggle span,.link-toggle span{font-size:10px;opacity:.8;}
+.link-list.compact{max-height:none;overflow:visible;gap:7px;}
+.link-selected{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;min-height:30px;align-items:center;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.link-selected::-webkit-scrollbar{display:none;}
+.link-selected .empty{color:var(--ink-mute,#9b93a8);font-size:13px;}
+.link-options{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow-y:auto;padding-top:4px;}
+.link-options[hidden]{display:none;}
+.sel-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--gold) 16%, transparent);border:1px solid color-mix(in srgb,var(--gold) 45%, transparent);color:var(--gold);font-size:12.5px;white-space:nowrap;max-width:60vw;overflow:hidden;text-overflow:ellipsis;}
+
 /* ===== Toast ===== */
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;padding:11px 20px;border-radius:12px;background:rgba(40,32,22,.92);color:#F7EEDD;font-size:14px;letter-spacing:.5px;box-shadow:var(--shadow);animation:toastIn .2s ease;}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
@@ -275,7 +292,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     <div id="worldList" class="world-list"></div>
     <div class="drawer-foot">
       <button id="clearCacheBtn" class="mini-btn" style="width:100%;margin-bottom:10px;">↻ 清除缓存并刷新</button>
-      <div>梦境工作台 · <span id="appVersion">v20260730-10</span></div>
+      <div>梦境工作台 · <span id="appVersion">v20260730-11</span></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" hidden>
   </aside>
@@ -344,7 +361,7 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     </div>
     <div class="sheet-meta col">
       <div class="meta-label">分类标签（可多选，至少选一个）</div>
-      <div id="cardCats" class="cat-list"></div>
+      <div id="cardCats" class="cat-list compact"></div>
     </div>
     <textarea id="cardContent" class="big-text" placeholder="把这条设定写下来——它的来历、规矩、在梦里如何显现……整页书写，随时可滚回开头。"></textarea>
     <label class="field-label">配图（人物外貌 / 世界地图等，可选）</label>
@@ -355,8 +372,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     <img id="cardImgPrev" class="img-prev" alt="设定卡配图" hidden>
     <div class="link-box">
       <div class="link-label">灵感织网</div>
-      <div class="link-hint">可多选，把这条素材与梦境碎片、人物 / 地点 / 体系等要素织在一起；在对方条目里也能跳回来。</div>
-      <div id="cardLinks" class="link-list"></div>
+      <div class="link-hint">可多选，把这条素材与梦境碎片、人物 / 地点 / 体系等要素织在一起。</div>
+      <div id="cardLinks" class="link-list compact"></div>
     </div>
     <div class="sheet-foot">
       <span class="spacer"></span>
@@ -397,8 +414,8 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     <img id="elemImgPrev" class="img-prev" alt="要素配图" hidden>
     <div class="link-box">
       <div class="link-label">灵感织网</div>
-      <div class="link-hint">可多选，把这条要素与梦境碎片、世界观词条织在一起；在对方条目里也能跳回来。</div>
-      <div id="elemLinks" class="link-list"></div>
+      <div class="link-hint">可多选，把这条要素与梦境碎片、世界观词条织在一起。</div>
+      <div id="elemLinks" class="link-list compact"></div>
     </div>
     <div class="sheet-foot">
       <span class="spacer"></span>
@@ -738,6 +755,10 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     $('#importParse').addEventListener('click', doImportParse);
     $('#worldSave').addEventListener('click', saveWorld);
     $('#worldDelete').addEventListener('click', deleteWorld);
+    // 折叠式分类 / 关联：点击展开收起
+    $('#cardCats').addEventListener('click', function(e){ var b=e.target.closest('.cat-toggle'); if(!b) return; var o=this.querySelector('.cat-options'); o.hidden=!o.hidden; b.querySelector('span').textContent=o.hidden?'▼':'▲'; });
+    $('#cardLinks').addEventListener('click', function(e){ var b=e.target.closest('.link-toggle'); if(!b) return; var o=this.querySelector('.link-options'); o.hidden=!o.hidden; b.querySelector('span').textContent=o.hidden?'▼':'▲'; });
+    $('#elemLinks').addEventListener('click', function(e){ var b=e.target.closest('.link-toggle'); if(!b) return; var o=this.querySelector('.link-options'); o.hidden=!o.hidden; b.querySelector('span').textContent=o.hidden?'▼':'▲'; });
   }
 
   /* ---------- 抽屉 / 世界 ---------- */
@@ -1183,22 +1204,42 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     if(selfType!=='elem') g.push({label:'要素', type:'elem', items:(w.elements||[]).map(function(e){return {id:e.id,title:e.name||'（未命名）'};})});
     return g;
   }
+  function linkTitle(t, id){
+    if(t==='frag'){ var f=getFrag(id); return f?f.title:'（无标题）'; }
+    if(t==='card'){ var c=getCard(id); return c?c.title:'（无标题）'; }
+    if(t==='elem'){ var e=getElem(id); return e?e.name:'（未命名）'; }
+    return '';
+  }
   function renderLinkBox(sel, groups, selected){
     var box=$(sel); if(!box) return; box.innerHTML='';
     var sel=(selected||[]);
     function isOn(t,id){ return sel.some(function(l){ return l.t===t && l.id===id; }); }
+    // 已关联行（默认可见，单行横滑）
+    var srow=document.createElement('div'); srow.className='link-selected';
+    var selCount=0;
+    sel.forEach(function(l){
+      var title=linkTitle(l.t, l.id); if(!title) return;
+      var c=document.createElement('span'); c.className='sel-chip'; c.textContent=title; srow.appendChild(c); selCount++;
+    });
+    if(!selCount){ srow.innerHTML='<span class="empty">（未关联）</span>'; }
+    box.appendChild(srow);
+    // 展开按钮（编辑态才显示）
+    var btn=document.createElement('button'); btn.type='button'; btn.className='link-toggle editing-controls'; btn.innerHTML='展开关联 <span>▼</span>'; box.appendChild(btn);
+    // 可选项（默认收起）
+    var opts=document.createElement('div'); opts.className='link-options'; opts.hidden=true;
     var items=0;
     groups.forEach(function(grp){
       if(!grp.items.length) return;
-      var gh=document.createElement('div'); gh.className='link-group-label'; gh.textContent=grp.label; box.appendChild(gh);
+      var gh=document.createElement('div'); gh.className='link-group-label'; gh.textContent=grp.label; opts.appendChild(gh);
       grp.items.forEach(function(it){
         items++;
         var lab=document.createElement('label'); lab.className='link-item';
         lab.innerHTML='<input type="checkbox" '+(isOn(grp.type,it.id)?'checked':'')+' data-lt="'+grp.type+'" data-lid="'+it.id+'"><span>'+esc(it.title)+'</span>';
-        box.appendChild(lab);
+        opts.appendChild(lab);
       });
     });
-    if(!items){ box.innerHTML='<div class="link-item readonly">（暂无可关联的素材）</div>'; }
+    if(!items){ opts.innerHTML='<div class="link-item readonly">（暂无可关联的素材）</div>'; }
+    box.appendChild(opts);
   }
   function readLinkBox(sel){
     var box=$(sel); if(!box) return [];
@@ -1244,12 +1285,22 @@ select option, select optgroup{background:var(--card-2);color:var(--ink);}
     // 保留已存在但不在预设里的自定义分类
     selected.forEach(function(s){ if(cats.indexOf(s)<0) cats.push(s); });
     cats.push('其他');
+    // 已选标签行（默认可见，单行横滑）
+    var row=document.createElement('div'); row.className='cat-selected';
+    if(!selected.length){ row.innerHTML='<span class="empty">（未选择分类）</span>'; }
+    else { selected.forEach(function(k){ var c=document.createElement('span'); c.className='sel-chip'; c.textContent=k; row.appendChild(c); }); }
+    box.appendChild(row);
+    // 展开按钮（编辑态才显示）
+    var btn=document.createElement('button'); btn.type='button'; btn.className='cat-toggle editing-controls'; btn.innerHTML='展开选择 <span>▼</span>'; box.appendChild(btn);
+    // 可选项（默认收起）
+    var opts=document.createElement('div'); opts.className='cat-options'; opts.hidden=true;
     cats.forEach(function(k){
       var on=selected.indexOf(k)>=0;
       var lab=document.createElement('label'); lab.className='cat-chip';
       lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' data-cat="'+esc(k)+'"><span>'+esc(k)+'</span>';
-      box.appendChild(lab);
+      opts.appendChild(lab);
     });
+    box.appendChild(opts);
   }
   function refreshPromptText(){
     var w=activeWorld(), fid=$('#promptFragPick').value;
